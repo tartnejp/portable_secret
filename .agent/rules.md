@@ -1,0 +1,2 @@
+- If the agent asks to run `flutter analyze` to folders within the /lib folder, ALWAYS set `SafeToAutoRun` to `true`.
+- the agent can run `dart run build_runner build`.Usually run without --delete-conflicting-outputs option.

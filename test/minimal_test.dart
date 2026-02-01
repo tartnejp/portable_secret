@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:portable_sec/application/providers/di/services_provider.dart';
+import 'package:portable_sec/presentation/home/home_screen.dart';
+import 'package:portable_sec/router_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'creation_wizard_test.dart'; // import MockNfcService
+
+void main() {
+  testWidgets('Minimal HomeScreen Test', (tester) async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+
+    final mockNfcService = MockNfcService();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [nfcServiceProvider.overrideWithValue(mockNfcService)],
+        child: MaterialApp(
+          home: const HomeScreen(), // Pump directly without router first
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    debugPrint("HomeScreen found directly.");
+
+    // Now try with Router
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [nfcServiceProvider.overrideWithValue(mockNfcService)],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final router = ref.watch(routerProvider);
+            return MaterialApp.router(routerConfig: router);
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    debugPrint("HomeScreen found via Router.");
+  });
+}

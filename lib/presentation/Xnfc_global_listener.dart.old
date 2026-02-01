@@ -1,0 +1,96 @@
+// import 'package:flutter/material.dart';
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import '../../application/dtos/nfc_data.dart';
+// import '../application/providers/di/services_provider.dart';
+// import '../application/providers/scan_providers.dart.old';
+// import '../app_observer.dart';
+
+// class NfcGlobalListener extends ConsumerStatefulWidget {
+//   final Widget child;
+//   const NfcGlobalListener({super.key, required this.child});
+
+//   @override
+//   ConsumerState<NfcGlobalListener> createState() => _NfcGlobalListenerState();
+// }
+
+// class _NfcGlobalListenerState extends ConsumerState<NfcGlobalListener>
+//     with RouteAware {
+//   @override
+//   void initState() {
+//     super.initState();
+//     _startNfcSession();
+//   }
+
+//   @override
+//   void didChangeDependencies() {
+//     super.didChangeDependencies();
+//     final route = ModalRoute.of(context);
+//     if (route is PageRoute) {
+//       routeObserver.subscribe(this, route);
+//     }
+//   }
+
+//   // Wait, I can't easily import main.dart from here without circular dep potential.
+//   // Better to check lifecycle or just rely on `stopSession` not being called by others?
+//   // But others DO call stopSession.
+
+//   // Alternative: Resume on `reassemble` or `activate`? No.
+//   // Alternative: Use `WidgetsBindingObserver.didHaveMemoryPressure`? No.
+
+//   // Let's use a simpler approach:
+//   // When a screen that USES NFC is popped, it should ideally notify us?
+//   // Or we just restart on valid lifecycle events.
+
+//   // Let's implement RouteAware but without importing main.dart directly if I can avoid it.
+//   // I will move `routeObserver` to a separate file `app_router_observer.dart` to avoid circular deps.
+
+//   @override
+//   void dispose() {
+//     routeObserver.unsubscribe(this);
+//     // Ensure session is stopped when widget is disposed
+//     ref.read(nfcServiceProvider).stopSession();
+//     super.dispose();
+//   }
+
+//   @override
+//   void didPopNext() {
+//     debugPrint("NfcGlobalListener: didPopNext - Restarting Session");
+//     _startNfcSession();
+//   }
+
+//   @override
+//   void didPushNext() {
+//     debugPrint("NfcGlobalListener: didPushNext - Stopping Session");
+//     ref
+//         .read(nfcServiceProvider)
+//         .stopSession(); // Fire and forget? Better to await? can't await in void.
+//   }
+
+//   Future<void> _startNfcSession() async {
+//     final nfcService = ref.read(nfcServiceProvider);
+//     debugPrint("NfcGlobalListener: Ensuring previous session stopped...");
+//     await nfcService.stopSession(); // Safety check
+
+//     debugPrint("NfcGlobalListener: Starting new session...");
+//     await nfcService.startSession(
+//       onDiscovered: (tag) async {
+//         debugPrint("NfcGlobalListener: Tag Discovered!");
+//         final data = NfcData.fromTag(tag);
+//         // Explicitly inspect data for debug
+//         debugPrint(
+//           "NfcGlobalListener: Raw Records Count: ${data.records.length}",
+//         );
+
+//         ref.read(scanProvider.notifier).onTagDiscovered(data);
+//       },
+//       onError: (err) {
+//         debugPrint("NFC Error (Listener): $err");
+//       },
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return widget.child;
+//   }
+// }

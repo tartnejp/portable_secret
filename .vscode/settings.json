@@ -1,0 +1,18 @@
+{
+    "workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#c9c96d", // タイトルバーの背景色
+        "titleBar.activeForeground": "#111111", // タイトルバーの文字色
+    },
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "C:\\Program Files\\Android\\Android Studio\\jbr",
+            "default": true
+        }
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "files.exclude": {
+        "**/*.freezed.dart": true,
+        "**/*.g.dart": true
+    }
+}
