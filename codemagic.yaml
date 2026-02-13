@@ -7,6 +7,11 @@ workflows:
       flutter: stable
       xcode: latest
 
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/Library/Caches/CocoaPods
+
     scripts:
       - name: Flutter pub get
         script: flutter packages pub get
