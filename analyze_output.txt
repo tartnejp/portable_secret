@@ -1,2 +1,0 @@
-11 issues found. (ran
-in 3.2s)

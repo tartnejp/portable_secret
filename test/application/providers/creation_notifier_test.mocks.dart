@@ -45,12 +45,12 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
   }
 
   @override
-  _i4.Stream<_i5.NfcData> get backgroundTagStream =>
+  _i4.Stream<_i5.NfcData?> get backgroundTagStream =>
       (super.noSuchMethod(
             Invocation.getter(#backgroundTagStream),
-            returnValue: _i4.Stream<_i5.NfcData>.empty(),
+            returnValue: _i4.Stream<_i5.NfcData?>.empty(),
           )
-          as _i4.Stream<_i5.NfcData>);
+          as _i4.Stream<_i5.NfcData?>);
 
   @override
   _i4.Future<_i4.Stream<_i3.NfcWriteState>> startWrite(
@@ -83,6 +83,14 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
     Invocation.method(#resetSession, []),
     returnValueForMissingStub: null,
   );
+
+  @override
+  _i4.Future<_i5.NfcData?> getInitialTag() =>
+      (super.noSuchMethod(
+            Invocation.method(#getInitialTag, []),
+            returnValue: _i4.Future<_i5.NfcData?>.value(),
+          )
+          as _i4.Future<_i5.NfcData?>);
 }
 
 /// A class which mocks [WizardDraftRepository].
