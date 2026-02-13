@@ -19,7 +19,7 @@ workflows:
       - name: Build Unsigned .app
         script: |
           # 1. まず署名なしでビルド
-          flutter build ios --release --no-codesign --no-pub
+          flutter build ios --release --no-codesign
           
       - name: Payload into .ipa
         script: |
