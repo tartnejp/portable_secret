@@ -6,13 +6,6 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-    
-    # トリガー設定（手動のみにするなどお好みで）
-    triggering:
-      events:
-        - push
-      branch_filter:
-        - main
 
     scripts:
       - name: Flutter pub get
