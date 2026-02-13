@@ -6,17 +6,15 @@
 import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:nfc_toolkit/src/nfc_data.dart' as _i5;
+import 'package:nfc_toolkit/src/nfc_service.dart' as _i3;
 import 'package:portable_sec/application/providers/creation_state.dart' as _i7;
 import 'package:portable_sec/application/services/encryption_service.dart'
     as _i8;
-import 'package:portable_sec/application/services/nfc_service_interface.dart'
-    as _i3;
 import 'package:portable_sec/domain/value_objects/lock_method.dart' as _i9;
 import 'package:portable_sec/domain/value_objects/secret_data.dart' as _i2;
 import 'package:portable_sec/infrastructure/repositories/draft_repository_impl.dart'
     as _i6;
-import 'package:portable_sec/infrastructure/services/nfc_components/nfc_data.dart'
-    as _i5;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values

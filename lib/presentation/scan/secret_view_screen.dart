@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../router_provider.dart';
 import '../../domain/value_objects/secret_data.dart';
+import '../../domain/value_objects/lock_method.dart';
+import '../../application/providers/creation_providers.dart';
 
-class SecretViewScreen extends StatelessWidget {
+// Define arguments class for type safety
+class SecretViewArgs {
   final SecretData secret;
-  const SecretViewScreen({super.key, required this.secret});
+  final LockType lockType;
+  final bool isManualUnlockRequired;
+  final int capacity;
+
+  SecretViewArgs({
+    required this.secret,
+    required this.lockType,
+    required this.isManualUnlockRequired,
+    required this.capacity,
+  });
+}
+
+class SecretViewScreen extends ConsumerWidget {
+  final SecretViewArgs args;
+  const SecretViewScreen({super.key, required this.args});
 
   Widget _buildValueText(BuildContext context, String value) {
     // Check if the value is a valid URL
@@ -40,7 +59,8 @@ class SecretViewScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final secret = args.secret;
     return Scaffold(
       appBar: AppBar(
         title: const Text('復号された情報'),
@@ -78,11 +98,35 @@ class SecretViewScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.goNamed('HOM');
-                },
-                child: const Text('ホーム画面に戻る'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        // "Edit" Flow
+                        ref
+                            .read(creationProvider.notifier)
+                            .initializeForEdit(
+                              args.secret,
+                              args.lockType,
+                              args.isManualUnlockRequired,
+                              args.capacity,
+                            );
+                        context.goNamed(AppRoute.creationInput.name);
+                      },
+                      child: const Text('編集する'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.goNamed(AppRoute.home.name);
+                      },
+                      child: const Text('ホーム画面に戻る'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

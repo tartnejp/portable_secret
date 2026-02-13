@@ -86,10 +86,8 @@ class _PatternLockState extends State<PatternLock> {
   }
 
   void _handleTouch(Offset localPosition) {
-    final size = const Size(
-      300,
-      300,
-    ); // Fixed size for now, should be layout builder
+    final size = const Size(300, 300);
+    // Fixed size for now, should be layout builder
     // Actually, CustomPainter size fits parent. But GestureDetector need size.
     // Let's assume size is available via LayoutBuilder or fixed.
     // For simplicity, passing fixed size 300x300 in build.

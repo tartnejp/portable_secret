@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 import '../../../domain/value_objects/lock_method.dart';
 
@@ -19,6 +20,8 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
       final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       if (extra != null && extra['restore'] == true) {
         _restoreDraft();
+      } else {
+        ref.read(creationProvider.notifier).reset();
       }
     });
   }
@@ -35,16 +38,16 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
         // Already here
         break;
       case CreationStep.capacityCheck:
-        context.goNamed('CCA');
+        context.goNamed(AppRoute.creationCapacity.name);
         break;
       case CreationStep.inputData:
-        context.goNamed('CIN');
+        context.goNamed(AppRoute.creationInput.name);
         break;
       case CreationStep.lockConfig:
-        context.goNamed('CCF');
+        context.goNamed(AppRoute.creationConfig.name);
         break;
       case CreationStep.write:
-        context.goNamed('CWR');
+        context.goNamed(AppRoute.creationWrite.name);
         break;
     }
   }
@@ -60,7 +63,7 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
         title: const Text('新規データ作成 (1/5)'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.goNamed('HOM'),
+          onPressed: () => context.goNamed(AppRoute.home.name),
         ),
       ),
       body: Padding(
@@ -100,7 +103,7 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
                   // Update state to match next step
                   notifier.nextFromMethodSelection();
                   // Navigate
-                  context.goNamed('CCA');
+                  context.goNamed(AppRoute.creationCapacity.name);
                 },
                 child: const Text("次へ"),
               ),

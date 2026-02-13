@@ -20,7 +20,7 @@ final class CreationNotifierProvider
         argument: null,
         retry: null,
         name: r'creationProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -41,7 +41,7 @@ final class CreationNotifierProvider
   }
 }
 
-String _$creationNotifierHash() => r'0ae5d1f4b78bb9fd702b6b4550a902cf5a0aa484';
+String _$creationNotifierHash() => r'1fa6d99162d8350b501ba49bcbf1bba75bab35a4';
 
 abstract class _$CreationNotifier extends $Notifier<CreationState> {
   CreationState build();

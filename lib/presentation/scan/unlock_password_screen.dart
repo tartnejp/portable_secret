@@ -3,11 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import '../../application/providers/encryption_providers.dart';
+import '../../router_provider.dart';
+import '../../domain/value_objects/lock_method.dart';
+import 'secret_view_screen.dart'; // Import for SecretViewArgs
 
 class UnlockPasswordScreen extends ConsumerStatefulWidget {
   final String? encryptedText;
+  final int? lockType;
+  final int? capacity;
+  final bool isManualUnlockRequired;
 
-  const UnlockPasswordScreen({super.key, this.encryptedText});
+  const UnlockPasswordScreen({
+    super.key,
+    this.encryptedText,
+    this.lockType,
+    this.capacity,
+    this.isManualUnlockRequired = false,
+  });
 
   @override
   ConsumerState<UnlockPasswordScreen> createState() =>
@@ -39,7 +51,15 @@ class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
       final secret = await service.decrypt(bytes, _passwordController.text);
 
       if (mounted) {
-        context.pushNamed('SVS', extra: secret);
+        final args = SecretViewArgs(
+          secret: secret,
+          lockType: widget.lockType != null
+              ? LockType.values[widget.lockType!]
+              : LockType.password,
+          isManualUnlockRequired: widget.isManualUnlockRequired,
+          capacity: widget.capacity ?? 0,
+        );
+        context.pushNamed(AppRoute.secretView.name, extra: args);
       }
     } catch (e) {
       if (mounted) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 import '../../../domain/value_objects/lock_method.dart';
 import '../../widgets/pattern_lock.dart';
@@ -16,7 +17,7 @@ class ConfigLockPage extends ConsumerWidget {
     ref.listen(creationProvider, (prev, next) {
       if (next.step == CreationStep.write &&
           (prev?.step != CreationStep.write)) {
-        context.goNamed('CWR');
+        context.goNamed(AppRoute.creationWrite.name);
       }
       if (next.error != null && next.error != prev?.error) {
         ScaffoldMessenger.of(
@@ -66,7 +67,7 @@ class ConfigLockPage extends ConsumerWidget {
                   }
 
                   notifier.backToInputData();
-                  context.goNamed('CIN');
+                  context.goNamed(AppRoute.creationInput.name);
                 },
               ),
       ),
@@ -191,6 +192,8 @@ class ConfigLockPage extends ConsumerWidget {
     return Column(
       children: [
         Container(
+          width: double.infinity,
+          alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey),

@@ -3,12 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:portable_sec/application/providers/creation_providers.dart';
-import 'package:portable_sec/application/providers/di/services_provider.dart';
-import 'package:portable_sec/application/services/nfc_service_interface.dart';
-import 'package:portable_sec/domain/value_objects/lock_method.dart';
-import 'package:portable_sec/infrastructure/services/nfc_components/nfc_data.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart';
 import 'package:portable_sec/presentation/creation/steps/capacity_check_page.dart';
 import 'package:portable_sec/presentation/creation/steps/config_lock_page.dart';
 import 'package:portable_sec/presentation/creation/steps/input_data_page.dart';
@@ -50,6 +45,11 @@ class MockNfcService implements NfcService {
     bool allowOverwrite = false,
   }) async {
     return _writeStateController.stream;
+  }
+
+  @override
+  Future<NfcData?> getInitialTag() async {
+    return null;
   }
 }
 
@@ -103,7 +103,7 @@ void main() {
     expect(find.byType(CapacityCheckPage), findsOneWidget);
     await tester.tap(find.text('手動で選択する'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('NTAG215 (504 bytes)'));
+    await tester.tap(find.text('NTAG215 (492 bytes)'));
     await tester.pumpAndSettle();
 
     // 4. Input Data
@@ -190,7 +190,7 @@ void main() {
     expect(find.byType(WriteTagPage), findsOneWidget);
 
     // Scenario: Capacity Error first
-    final capacityErr = NfcCapacityError(200, 144);
+    // final capacityErr = NfcCapacityError(200, 144);
     // Directly add error to controller (mocking service behavior)
     // Note: Since MockNfcService doesn't expose controller directly here without casting or refactoring,
     // we assume we can add a method or just use `startWrite` logic triggers.
@@ -206,7 +206,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('書き込みが成功しました'), findsOneWidget);
-    await tester.tap(find.text('OK (ホームへ戻る)'));
+    await tester.tap(find.text('ホームへ戻る'));
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 import '../../../domain/value_objects/lock_method.dart';
+import '../../../domain/value_objects/secret_data.dart'; // Import SecretData
 import '../../../application/services/capacity_calculator.dart';
+import '../../scan/secret_view_screen.dart'; // Import SecretViewArgs
 
 class InputDataPage extends ConsumerStatefulWidget {
   const InputDataPage({super.key});
@@ -146,7 +149,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
     ref.listen(creationProvider, (prev, next) {
       if (next.step == CreationStep.lockConfig &&
           (prev?.step != CreationStep.lockConfig)) {
-        context.goNamed('CCF');
+        context.goNamed(AppRoute.creationConfig.name);
       }
       if (next.isDraftSaved && !(prev?.isDraftSaved ?? false)) {
         ScaffoldMessenger.of(
@@ -167,8 +170,19 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            notifier.backToCapacityCheck();
-            context.goNamed('CCA');
+            if (state.isEditMode) {
+              // Edit Mode: Return to SecretViewScreen
+              final args = SecretViewArgs(
+                secret: SecretData(items: state.items),
+                lockType: state.selectedType,
+                isManualUnlockRequired: state.isManualUnlockRequired,
+                capacity: state.maxCapacity,
+              );
+              context.goNamed(AppRoute.secretView.name, extra: args);
+            } else {
+              notifier.backToCapacityCheck();
+              context.goNamed(AppRoute.creationCapacity.name);
+            }
           },
         ),
       ),

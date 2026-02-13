@@ -2,9 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/value_objects/secret_data.dart';
 import '../../domain/value_objects/lock_method.dart';
 import 'encryption_providers.dart';
-import 'di/services_provider.dart';
-import '../../application/services/nfc_service_interface.dart';
-import '../../infrastructure/services/nfc_components/nfc_data.dart';
+// import 'di/services_provider.dart'; // Removed
+import 'package:nfc_toolkit/nfc_toolkit.dart';
 import '../../application/services/capacity_calculator.dart';
 
 // Actually NfcData exposes `ndef` which returns `Ndef?` from `nfc_manager`, so we might need it for type checking if we use it directly.
@@ -24,11 +23,15 @@ part 'creation_providers.g.dart';
 
 // CreationState and CreationStep moved to creation_state.dart
 
-@riverpod
+@Riverpod(keepAlive: true)
 class CreationNotifier extends _$CreationNotifier {
   @override
   CreationState build() {
     return const CreationState();
+  }
+
+  void reset() {
+    state = const CreationState();
   }
 
   // ... (Existing methods selectMethod, nextFromMethodSelection etc.)
@@ -50,8 +53,8 @@ class CreationNotifier extends _$CreationNotifier {
     nfc.resetSession();
 
     try {
-      final data = await nfc.backgroundTagStream.first;
-      final ndef = data.ndef;
+      final data = await nfc.backgroundTagStream.where((d) => d != null).first;
+      final ndef = data!.ndef;
       int capacity = ndef?.maxSize ?? 137;
 
       state = state.copyWith(
@@ -69,6 +72,29 @@ class CreationNotifier extends _$CreationNotifier {
       maxCapacity: capacity,
       step: CreationStep.inputData,
       error: null,
+      isEditMode: false,
+    );
+  }
+
+  // Initialize for Edit Mode from SVS
+  void initializeForEdit(
+    SecretData secret,
+    LockType type,
+    bool isManualUnlockRequired,
+    int capacity,
+  ) {
+    state = state.copyWith(
+      items: secret.items,
+      selectedType: type,
+      isManualUnlockRequired: isManualUnlockRequired,
+      maxCapacity: capacity,
+      step: CreationStep.inputData, // Jump directly to Input Data
+      isEditMode: true, // Mark as Edit Mode
+      error: null,
+      isDraftSaved: false,
+      lockInput: "",
+      firstInput: "",
+      isConfirming: false,
     );
   }
 

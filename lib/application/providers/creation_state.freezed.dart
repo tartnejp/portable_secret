@@ -23,7 +23,8 @@ mixin _$CreationState {
  String? get error; bool get isSuccess;// Draft Status
  bool get isDraftSaved;// Preferences
  bool get isManualUnlockRequired;// For Pattern+PIN: Second stage (PIN input after Pattern)
- bool get isLockSecondStage; String get tempFirstLockInput;
+ bool get isLockSecondStage; String get tempFirstLockInput;// Edit Mode (from SVS)
+ bool get isEditMode;
 /// Create a copy of CreationState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -36,16 +37,16 @@ $CreationStateCopyWith<CreationState> get copyWith => _$CreationStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreationState&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.lockInput, lockInput) || other.lockInput == lockInput)&&(identical(other.selectedType, selectedType) || other.selectedType == selectedType)&&(identical(other.isConfirming, isConfirming) || other.isConfirming == isConfirming)&&(identical(other.firstInput, firstInput) || other.firstInput == firstInput)&&(identical(other.maxCapacity, maxCapacity) || other.maxCapacity == maxCapacity)&&(identical(other.error, error) || other.error == error)&&(identical(other.isSuccess, isSuccess) || other.isSuccess == isSuccess)&&(identical(other.isDraftSaved, isDraftSaved) || other.isDraftSaved == isDraftSaved)&&(identical(other.isManualUnlockRequired, isManualUnlockRequired) || other.isManualUnlockRequired == isManualUnlockRequired)&&(identical(other.isLockSecondStage, isLockSecondStage) || other.isLockSecondStage == isLockSecondStage)&&(identical(other.tempFirstLockInput, tempFirstLockInput) || other.tempFirstLockInput == tempFirstLockInput));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreationState&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.lockInput, lockInput) || other.lockInput == lockInput)&&(identical(other.selectedType, selectedType) || other.selectedType == selectedType)&&(identical(other.isConfirming, isConfirming) || other.isConfirming == isConfirming)&&(identical(other.firstInput, firstInput) || other.firstInput == firstInput)&&(identical(other.maxCapacity, maxCapacity) || other.maxCapacity == maxCapacity)&&(identical(other.error, error) || other.error == error)&&(identical(other.isSuccess, isSuccess) || other.isSuccess == isSuccess)&&(identical(other.isDraftSaved, isDraftSaved) || other.isDraftSaved == isDraftSaved)&&(identical(other.isManualUnlockRequired, isManualUnlockRequired) || other.isManualUnlockRequired == isManualUnlockRequired)&&(identical(other.isLockSecondStage, isLockSecondStage) || other.isLockSecondStage == isLockSecondStage)&&(identical(other.tempFirstLockInput, tempFirstLockInput) || other.tempFirstLockInput == tempFirstLockInput)&&(identical(other.isEditMode, isEditMode) || other.isEditMode == isEditMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,step,const DeepCollectionEquality().hash(items),lockInput,selectedType,isConfirming,firstInput,maxCapacity,error,isSuccess,isDraftSaved,isManualUnlockRequired,isLockSecondStage,tempFirstLockInput);
+int get hashCode => Object.hash(runtimeType,step,const DeepCollectionEquality().hash(items),lockInput,selectedType,isConfirming,firstInput,maxCapacity,error,isSuccess,isDraftSaved,isManualUnlockRequired,isLockSecondStage,tempFirstLockInput,isEditMode);
 
 @override
 String toString() {
-  return 'CreationState(step: $step, items: $items, lockInput: $lockInput, selectedType: $selectedType, isConfirming: $isConfirming, firstInput: $firstInput, maxCapacity: $maxCapacity, error: $error, isSuccess: $isSuccess, isDraftSaved: $isDraftSaved, isManualUnlockRequired: $isManualUnlockRequired, isLockSecondStage: $isLockSecondStage, tempFirstLockInput: $tempFirstLockInput)';
+  return 'CreationState(step: $step, items: $items, lockInput: $lockInput, selectedType: $selectedType, isConfirming: $isConfirming, firstInput: $firstInput, maxCapacity: $maxCapacity, error: $error, isSuccess: $isSuccess, isDraftSaved: $isDraftSaved, isManualUnlockRequired: $isManualUnlockRequired, isLockSecondStage: $isLockSecondStage, tempFirstLockInput: $tempFirstLockInput, isEditMode: $isEditMode)';
 }
 
 
@@ -56,7 +57,7 @@ abstract mixin class $CreationStateCopyWith<$Res>  {
   factory $CreationStateCopyWith(CreationState value, $Res Function(CreationState) _then) = _$CreationStateCopyWithImpl;
 @useResult
 $Res call({
- CreationStep step, List<SecretItem> items, String lockInput, LockType selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput
+ CreationStep step, List<SecretItem> items, String lockInput, LockType selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput, bool isEditMode
 });
 
 
@@ -73,7 +74,7 @@ class _$CreationStateCopyWithImpl<$Res>
 
 /// Create a copy of CreationState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = null,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = null,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,Object? isEditMode = null,}) {
   return _then(_self.copyWith(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as CreationStep,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
@@ -88,7 +89,8 @@ as bool,isDraftSaved: null == isDraftSaved ? _self.isDraftSaved : isDraftSaved /
 as bool,isManualUnlockRequired: null == isManualUnlockRequired ? _self.isManualUnlockRequired : isManualUnlockRequired // ignore: cast_nullable_to_non_nullable
 as bool,isLockSecondStage: null == isLockSecondStage ? _self.isLockSecondStage : isLockSecondStage // ignore: cast_nullable_to_non_nullable
 as bool,tempFirstLockInput: null == tempFirstLockInput ? _self.tempFirstLockInput : tempFirstLockInput // ignore: cast_nullable_to_non_nullable
-as String,
+as String,isEditMode: null == isEditMode ? _self.isEditMode : isEditMode // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -173,10 +175,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CreationState() when $default != null:
-return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput);case _:
+return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput,_that.isEditMode);case _:
   return orElse();
 
 }
@@ -194,10 +196,10 @@ return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)  $default,) {final _that = this;
 switch (_that) {
 case _CreationState():
-return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput);case _:
+return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput,_that.isEditMode);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -214,10 +216,10 @@ return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)?  $default,) {final _that = this;
 switch (_that) {
 case _CreationState() when $default != null:
-return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput);case _:
+return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput,_that.isEditMode);case _:
   return null;
 
 }
@@ -229,7 +231,7 @@ return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.
 @JsonSerializable()
 
 class _CreationState implements CreationState {
-  const _CreationState({this.step = CreationStep.methodSelection, final  List<SecretItem> items = const [], this.lockInput = "", this.selectedType = LockType.pin, this.isConfirming = false, this.firstInput = "", this.maxCapacity = 0, this.error, this.isSuccess = false, this.isDraftSaved = false, this.isManualUnlockRequired = true, this.isLockSecondStage = false, this.tempFirstLockInput = ""}): _items = items;
+  const _CreationState({this.step = CreationStep.methodSelection, final  List<SecretItem> items = const [], this.lockInput = "", this.selectedType = LockType.pin, this.isConfirming = false, this.firstInput = "", this.maxCapacity = 0, this.error, this.isSuccess = false, this.isDraftSaved = false, this.isManualUnlockRequired = true, this.isLockSecondStage = false, this.tempFirstLockInput = "", this.isEditMode = false}): _items = items;
   factory _CreationState.fromJson(Map<String, dynamic> json) => _$CreationStateFromJson(json);
 
 @override@JsonKey() final  CreationStep step;
@@ -259,6 +261,8 @@ class _CreationState implements CreationState {
 // For Pattern+PIN: Second stage (PIN input after Pattern)
 @override@JsonKey() final  bool isLockSecondStage;
 @override@JsonKey() final  String tempFirstLockInput;
+// Edit Mode (from SVS)
+@override@JsonKey() final  bool isEditMode;
 
 /// Create a copy of CreationState
 /// with the given fields replaced by the non-null parameter values.
@@ -273,16 +277,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreationState&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.lockInput, lockInput) || other.lockInput == lockInput)&&(identical(other.selectedType, selectedType) || other.selectedType == selectedType)&&(identical(other.isConfirming, isConfirming) || other.isConfirming == isConfirming)&&(identical(other.firstInput, firstInput) || other.firstInput == firstInput)&&(identical(other.maxCapacity, maxCapacity) || other.maxCapacity == maxCapacity)&&(identical(other.error, error) || other.error == error)&&(identical(other.isSuccess, isSuccess) || other.isSuccess == isSuccess)&&(identical(other.isDraftSaved, isDraftSaved) || other.isDraftSaved == isDraftSaved)&&(identical(other.isManualUnlockRequired, isManualUnlockRequired) || other.isManualUnlockRequired == isManualUnlockRequired)&&(identical(other.isLockSecondStage, isLockSecondStage) || other.isLockSecondStage == isLockSecondStage)&&(identical(other.tempFirstLockInput, tempFirstLockInput) || other.tempFirstLockInput == tempFirstLockInput));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreationState&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.lockInput, lockInput) || other.lockInput == lockInput)&&(identical(other.selectedType, selectedType) || other.selectedType == selectedType)&&(identical(other.isConfirming, isConfirming) || other.isConfirming == isConfirming)&&(identical(other.firstInput, firstInput) || other.firstInput == firstInput)&&(identical(other.maxCapacity, maxCapacity) || other.maxCapacity == maxCapacity)&&(identical(other.error, error) || other.error == error)&&(identical(other.isSuccess, isSuccess) || other.isSuccess == isSuccess)&&(identical(other.isDraftSaved, isDraftSaved) || other.isDraftSaved == isDraftSaved)&&(identical(other.isManualUnlockRequired, isManualUnlockRequired) || other.isManualUnlockRequired == isManualUnlockRequired)&&(identical(other.isLockSecondStage, isLockSecondStage) || other.isLockSecondStage == isLockSecondStage)&&(identical(other.tempFirstLockInput, tempFirstLockInput) || other.tempFirstLockInput == tempFirstLockInput)&&(identical(other.isEditMode, isEditMode) || other.isEditMode == isEditMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,step,const DeepCollectionEquality().hash(_items),lockInput,selectedType,isConfirming,firstInput,maxCapacity,error,isSuccess,isDraftSaved,isManualUnlockRequired,isLockSecondStage,tempFirstLockInput);
+int get hashCode => Object.hash(runtimeType,step,const DeepCollectionEquality().hash(_items),lockInput,selectedType,isConfirming,firstInput,maxCapacity,error,isSuccess,isDraftSaved,isManualUnlockRequired,isLockSecondStage,tempFirstLockInput,isEditMode);
 
 @override
 String toString() {
-  return 'CreationState(step: $step, items: $items, lockInput: $lockInput, selectedType: $selectedType, isConfirming: $isConfirming, firstInput: $firstInput, maxCapacity: $maxCapacity, error: $error, isSuccess: $isSuccess, isDraftSaved: $isDraftSaved, isManualUnlockRequired: $isManualUnlockRequired, isLockSecondStage: $isLockSecondStage, tempFirstLockInput: $tempFirstLockInput)';
+  return 'CreationState(step: $step, items: $items, lockInput: $lockInput, selectedType: $selectedType, isConfirming: $isConfirming, firstInput: $firstInput, maxCapacity: $maxCapacity, error: $error, isSuccess: $isSuccess, isDraftSaved: $isDraftSaved, isManualUnlockRequired: $isManualUnlockRequired, isLockSecondStage: $isLockSecondStage, tempFirstLockInput: $tempFirstLockInput, isEditMode: $isEditMode)';
 }
 
 
@@ -293,7 +297,7 @@ abstract mixin class _$CreationStateCopyWith<$Res> implements $CreationStateCopy
   factory _$CreationStateCopyWith(_CreationState value, $Res Function(_CreationState) _then) = __$CreationStateCopyWithImpl;
 @override @useResult
 $Res call({
- CreationStep step, List<SecretItem> items, String lockInput, LockType selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput
+ CreationStep step, List<SecretItem> items, String lockInput, LockType selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput, bool isEditMode
 });
 
 
@@ -310,7 +314,7 @@ class __$CreationStateCopyWithImpl<$Res>
 
 /// Create a copy of CreationState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = null,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = null,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,Object? isEditMode = null,}) {
   return _then(_CreationState(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as CreationStep,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
@@ -325,7 +329,8 @@ as bool,isDraftSaved: null == isDraftSaved ? _self.isDraftSaved : isDraftSaved /
 as bool,isManualUnlockRequired: null == isManualUnlockRequired ? _self.isManualUnlockRequired : isManualUnlockRequired // ignore: cast_nullable_to_non_nullable
 as bool,isLockSecondStage: null == isLockSecondStage ? _self.isLockSecondStage : isLockSecondStage // ignore: cast_nullable_to_non_nullable
 as bool,tempFirstLockInput: null == tempFirstLockInput ? _self.tempFirstLockInput : tempFirstLockInput // ignore: cast_nullable_to_non_nullable
-as String,
+as String,isEditMode: null == isEditMode ? _self.isEditMode : isEditMode // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

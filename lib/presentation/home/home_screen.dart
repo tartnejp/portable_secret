@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/value_objects/lock_method.dart';
-
 import '../../infrastructure/repositories/draft_repository_impl.dart';
-import '../../application/providers/nfc_detection_provider.dart';
-import '../../application/providers/di/services_provider.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart'; // Imports nfcServiceProvider, NfcDetectionRefExtension, GenericNfcDetected
+import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
+import '../../application/nfc/url_detection.dart'; // Imports UrlDetection (optional usage)
 
 import '../../router_provider.dart';
 
@@ -23,10 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     super.initState();
     // Initialize the detection strategy for secrets
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(nfcDetectionStrategyProvider.notifier)
-          .setStrategy(SecretNfcDetectionStrategy());
-      // Force reset session to ensure we are listening fresh
+      // Force reset session to ensure we are listening fresh on Start/Rebuild
       ref.read(nfcServiceProvider).resetSession();
     });
   }
@@ -43,10 +40,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   @override
   void dispose() {
-    // Note: ref access in dispose can be tricky, but usually safe for simple reads if container alive.
-    // However, to be safe from provider disposal issues, we might skip it or handle gracefully.
-    // But standard pattern is to unsubscribe.
-    // We wrap in try-catch in case provider is already gone (though unlikely here).
     try {
       ref.read(routeObserverProvider).unsubscribe(this);
     } catch (_) {}
@@ -54,88 +47,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   @override
+  void didPushNext() {
+    // Called when we navigate away from this screen
+    _isResumed = false;
+  }
+
+  @override
   void didPopNext() {
     // Called when we return to this screen from another screen
     debugPrint("HomeScreen: didPopNext -> Resetting NFC Session");
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(nfcServiceProvider).resetSession();
-      ref
-          .read(nfcDetectionStrategyProvider.notifier)
-          .setStrategy(SecretNfcDetectionStrategy());
+    _isResumed = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
-        setState(() {
-          _statusMessage = 'NFCタグをタッチしてください';
-          _isReading = false;
-        });
+        ref.read(nfcServiceProvider).resetSession();
       }
     });
+
+    if (mounted) {
+      setState(() {
+        _statusMessage = 'NFCタグをタッチしてください';
+        _isReading = false;
+      });
+    }
   }
 
   String _statusMessage = 'NFCタグをタッチしてください';
   bool _isReading = false;
+  bool _isResumed = true; // Tracks if this screen is currently top-most
 
   @override
   Widget build(BuildContext context) {
-    // Listen to NfcDetectionEvent for Secrets
-    ref.listen(nfcDetectionEventProvider, (prev, next) {
-      next.whenData((event) {
-        setState(() => _isReading = true);
+    // Listen for Secret Detection
+    ref.listenNfcDetection<SecretDetection>((detection) {
+      if (!_isResumed)
+        return; // Ignore detections if we are not the active screen
 
-        event.when(
-          generic: (_) {
-            setState(() {
-              _statusMessage = '未登録、または不明なNFCタグです';
-              _isReading = false;
-            });
-          },
-          secretFound: (encryptedText, foundLockMethod) {
-            setState(() => _isReading = false);
-            if (foundLockMethod == null) {
-              if (mounted) {
-                context.pushNamed(
-                  'SEL',
-                  extra: {'encryptedText': encryptedText},
-                );
-              }
-            } else {
-              String routeName;
-              switch (foundLockMethod.type) {
-                case LockType.password:
-                  routeName = 'UPS';
-                  break;
-                case LockType.pin:
-                  routeName = 'UPI';
-                  break;
-                case LockType.pattern:
-                case LockType.patternAndPin:
-                  routeName = 'UPA';
-                  break;
-              }
-              context.pushNamed(
-                routeName,
-                extra: {
-                  'encryptedText': encryptedText,
-                  'lockType': foundLockMethod.type.index,
-                },
-              );
-            }
+      setState(() => _isReading = false);
+      final foundLockMethod = detection.foundLockMethod;
+      final encryptedText = detection.encryptedText!;
+
+      if (foundLockMethod == null) {
+        if (mounted) {
+          context.pushNamed(
+            AppRoute.selectUnlock.name,
+            extra: {
+              'encryptedText': encryptedText,
+              'capacity': detection.capacity,
+            },
+          );
+        }
+      } else {
+        String routeName = AppRoute.unlockPattern.name;
+        switch (foundLockMethod.type) {
+          case LockType.password:
+            routeName = AppRoute.unlockPassword.name;
+            break;
+          case LockType.pin:
+            routeName = AppRoute.unlockPin.name;
+            break;
+          case LockType.pattern:
+          case LockType.patternAndPin:
+            routeName = AppRoute.unlockPattern.name;
+            break;
+        }
+        context.pushNamed(
+          routeName,
+          extra: {
+            'encryptedText': encryptedText,
+            'lockType': foundLockMethod.type.index,
+            'capacity': detection.capacity,
+            'isManualUnlockRequired': false,
           },
         );
-      });
-
-      if (next.isLoading) {
-        // Optionally handle loading state from the stream if needed,
-        // though the stream usually just emits events.
-      }
-
-      if (next.hasError) {
-        setState(() {
-          _statusMessage = 'エラーが発生しました: ${next.error}';
-          _isReading = false;
-        });
       }
     });
 
+    // Listen for Generic/Unknown Detection (Update UI message)
+    ref.listenNfcDetection<GenericNfcDetected>((detection) {
+      setState(() {
+        _statusMessage = '未登録、または不明なNFCタグです';
+        _isReading = false;
+      });
+      // Note: Overlay might be suppressed by NfcDetectionScope configuration for Home,
+      // but this local state update ensures the UI text changes.
+    });
+
+    // Listen for Read Errors
+    ref.listenNfcDetection<NfcError>((detection) {
+      setState(() {
+        _statusMessage = '読み取りエラー: 再度タッチしてください';
+        _isReading = false;
+      });
+    });
+
+    // Optional: Listen for URL Detection
     return Scaffold(
       appBar: AppBar(title: const Text('Portable Sec')),
       body: Center(
@@ -162,7 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   if (hasDraft) {
                     _showDraftDialog(context, ref);
                   } else {
-                    context.goNamed('CLT');
+                    context.goNamed(AppRoute.creationLockType.name);
                   }
                 }
               },
@@ -191,13 +197,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           actions: [
             TextButton(
               onPressed: () async {
-                // Delete
                 Navigator.of(context).pop();
                 final draftRepo = ref.read(wizardDraftRepositoryProvider);
                 await draftRepo.deleteDraft();
 
                 if (context.mounted) {
-                  context.goNamed('CLT');
+                  context.goNamed(AppRoute.creationLockType.name);
                 }
               },
               child: const Text(
@@ -207,11 +212,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             ),
             FilledButton(
               onPressed: () async {
-                // Restore
                 Navigator.of(context).pop();
                 if (context.mounted) {
-                  // Navigate to start page with restore flag
-                  context.goNamed('CLT', extra: {'restore': true});
+                  context.goNamed(
+                    AppRoute.creationLockType.name,
+                    extra: {'restore': true},
+                  );
                 }
               },
               child: const Text("復元する"),

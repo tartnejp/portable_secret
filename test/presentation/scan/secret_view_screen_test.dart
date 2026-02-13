@@ -6,6 +6,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:portable_sec/presentation/scan/secret_view_screen.dart';
 import 'package:portable_sec/domain/value_objects/secret_data.dart';
+import 'package:portable_sec/domain/value_objects/lock_method.dart';
 
 // Mock UrlLauncherPlatform
 class MockUrlLauncher extends Fake
@@ -68,7 +69,16 @@ void main() {
 
         await tester.pumpWidget(
           ProviderScope(
-            child: MaterialApp(home: SecretViewScreen(secret: secret)),
+            child: MaterialApp(
+              home: SecretViewScreen(
+                args: SecretViewArgs(
+                  secret: secret,
+                  lockType: LockType.password,
+                  isManualUnlockRequired: false,
+                  capacity: 504,
+                ),
+              ),
+            ),
           ),
         );
 
@@ -103,7 +113,16 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(home: SecretViewScreen(secret: secret)),
+          child: MaterialApp(
+            home: SecretViewScreen(
+              args: SecretViewArgs(
+                secret: secret,
+                lockType: LockType.password,
+                isManualUnlockRequired: false,
+                capacity: 504,
+              ),
+            ),
+          ),
         ),
       );
 

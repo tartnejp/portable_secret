@@ -1,4 +1,5 @@
 ---
+trigger: always_on
 description: 開発セッション開始時に実行するルール確認フロー
 ---
 
@@ -21,4 +22,6 @@ AIエージェントはファイル操作（特に `task.md` や `implementation
 以下のコマンドは実行を許可します。
 
 - flutter analyze
--- ただし、libフォルダ以下のみに限定
+-- ただし、libフォルダ以下とpackagesフォルダ以下のみに限定
+
+- flutter test

@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // import for GoRouterState
 
-import 'infrastructure/services/nfc_service_impl.dart';
-import 'application/providers/nfc_detection_provider.dart';
-import 'listening_nfc_app.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart';
+import 'application/nfc/secret_detected.dart';
 import 'router_provider.dart';
 import 'startup.dart';
 import 'presentation/widgets/debug_info_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NfcServiceImpl.instance.init();
-  runApp(const ProviderScope(child: MainApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        nfcDetectionRegistryProvider.overrideWithValue(
+          NfcDetectionRegistry([
+            () => const SecretDetection(),
+            // Generic is handled by default fallbacks in the provider logic if nothing else matches
+          ]),
+        ),
+      ],
+      child: const MainApp(),
+    ),
+  );
 }
 
 // final routeObserver = RouteObserver<ModalRoute<void>>(); // Moved to app_observer.dart
@@ -30,12 +41,23 @@ class MainApp extends ConsumerWidget {
           useMaterial3: true,
         ),
         routerConfig: router,
-        // Wrap the Home with the Listener so it's active when Home is showing
+        // Wrap the Home with the Listener so it's active everywhere
         builder: (context, child) {
           return DebugInfoOverlay(
             router: router,
-            child: ListeningNfcApp(
-              strategy: SecretNfcDetectionStrategy(),
+            child: NfcDetectionScope(
+              // Explicitly pass router name getter for GoRouter
+              routeNameGetter: (context) {
+                try {
+                  return GoRouterState.of(context).name;
+                } catch (_) {
+                  return null;
+                }
+              },
+              disableGenericDetectionRoutes: {
+                AppRoute.home.name, // Enable overlay on Home
+                // Add other routes if needed
+              },
               child: child!,
             ),
           );

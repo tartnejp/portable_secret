@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mockito/mockito.dart';
 import 'package:portable_sec/presentation/creation/steps/config_lock_page.dart';
 import 'package:portable_sec/application/providers/creation_providers.dart';
 import 'package:portable_sec/domain/value_objects/lock_method.dart';

@@ -3,12 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import '../../application/providers/encryption_providers.dart';
+import '../../router_provider.dart';
+import '../../domain/value_objects/lock_method.dart';
+import 'secret_view_screen.dart'; // Import for SecretViewArgs
 
 class UnlockPinScreen extends ConsumerStatefulWidget {
   final String? encryptedText;
   final String? pattern;
+  final int? lockType;
+  final int? capacity;
+  final bool isManualUnlockRequired;
 
-  const UnlockPinScreen({super.key, this.encryptedText, this.pattern});
+  const UnlockPinScreen({
+    super.key,
+    this.encryptedText,
+    this.pattern,
+    this.lockType,
+    this.capacity,
+    this.isManualUnlockRequired = false,
+  });
 
   @override
   ConsumerState<UnlockPinScreen> createState() => _UnlockPinScreenState();
@@ -54,7 +67,15 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
       final secret = await service.decrypt(bytes, inputSecret);
 
       if (mounted) {
-        context.pushNamed('SVS', extra: secret);
+        final args = SecretViewArgs(
+          secret: secret,
+          lockType: widget.lockType != null
+              ? LockType.values[widget.lockType!]
+              : LockType.pin, // Fallback
+          isManualUnlockRequired: widget.isManualUnlockRequired,
+          capacity: widget.capacity ?? 0,
+        );
+        context.pushNamed(AppRoute.secretView.name, extra: args);
       }
     } catch (e) {
       if (mounted) {
@@ -82,15 +103,17 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
           const SizedBox(height: 24),
           // Display Area
           Container(
+            width: double.infinity,
+            alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            margin: const EdgeInsets.symmetric(horizontal: 32),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               _inputPin.replaceAll(RegExp(r'.'), '*'),
-              style: const TextStyle(fontSize: 24, letterSpacing: 8),
+              style: const TextStyle(fontSize: 24, letterSpacing: 4),
               textAlign: TextAlign.center,
             ),
           ),
@@ -99,7 +122,7 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 32.0),
             child: SizedBox(
-              width: 300,
+              width: 280,
               child: GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -126,9 +149,6 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
                     onPressed: _isLoading
                         ? null
                         : () => _onDigitPress(number.toString()),
-                    style: OutlinedButton.styleFrom(
-                      shape: const CircleBorder(),
-                    ),
                     child: Text(
                       "$number",
                       style: const TextStyle(fontSize: 24),

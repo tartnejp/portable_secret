@@ -1,0 +1,377 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'package:nfc_manager/ndef_record.dart'; // Explicit import for NdefRecord
+import 'package:nfc_manager_ndef/nfc_manager_ndef.dart'; // Required for TypeNameFormat, NdefRecord etc in v4
+import 'nfc_data.dart';
+
+// --- Interface & Data Types ---
+
+abstract class NfcService {
+  Future<Stream<NfcWriteState>> startWrite(
+    List<NfcWriteData> dataList, {
+    bool allowOverwrite = false,
+  });
+
+  Future<void> init();
+
+  /// Resets the NFC session to background idle mode.
+  void resetSession();
+
+  /// Stream of tags detected while not in explicit scan/write mode
+  Stream<NfcData?> get backgroundTagStream;
+
+  /// Retrieves the tag data that triggered the app launch, if any.
+  /// This should be consumed once.
+  Future<NfcData?> getInitialTag();
+}
+
+sealed class NfcWriteState {}
+
+class NfcWriteLoading extends NfcWriteState {}
+
+class NfcWriteSuccess extends NfcWriteState {}
+
+class NfcWriteOverwriteRequired extends NfcWriteState {}
+
+class NfcWriteError extends NfcWriteState {
+  final String message;
+  NfcWriteError(this.message);
+}
+
+class NfcCapacityError extends NfcWriteError {
+  final int required;
+  final int available;
+  NfcCapacityError(this.required, this.available)
+    : super("容量不足: 必要 $required bytes / 空き $available bytes");
+}
+
+sealed class NfcWriteData {}
+
+class NfcWriteDataUri extends NfcWriteData {
+  final Uri uri;
+  NfcWriteDataUri(this.uri);
+}
+
+class NfcWriteDataText extends NfcWriteData {
+  final String text;
+  NfcWriteDataText(this.text);
+}
+
+class NfcWriteDataMime extends NfcWriteData {
+  final String type;
+  final List<int> data;
+  NfcWriteDataMime(this.type, this.data);
+}
+
+class NfcWriteDataExternal extends NfcWriteData {
+  final String domain;
+  final String type;
+  final List<int> data;
+  NfcWriteDataExternal(this.domain, this.type, this.data);
+}
+
+class NfcWriteDataCustom extends NfcWriteData {
+  final List<int> payload;
+  final int tnf;
+  final List<int> type;
+  final List<int> id;
+
+  NfcWriteDataCustom({
+    required this.payload,
+    required this.tnf,
+    required this.type,
+    required this.id,
+  });
+}
+
+// --- Implementation ---
+
+class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
+  static final NfcServiceImpl instance = NfcServiceImpl._internal();
+
+  // Configurable channel name
+  final String _methodChannelName;
+  late final MethodChannel _platform;
+
+  factory NfcServiceImpl({String? methodChannelName}) {
+    if (methodChannelName != null &&
+        methodChannelName != instance._methodChannelName) {
+      // Re-configure if needed (Singletons usually shouldn't be reconfigured, but for package flexibility)
+      // Ideally this is handled by DI, but for singleton usage:
+      return NfcServiceImpl._internal(methodChannelName: methodChannelName);
+    }
+    return instance;
+  }
+
+  NfcServiceImpl._internal({String? methodChannelName})
+    : _methodChannelName = methodChannelName ?? 'com.example.nfc_toolkit/nfc' {
+    _platform = MethodChannel(_methodChannelName);
+    _backgroundTagController = StreamController<NfcData?>.broadcast(
+      onListen: _onBackgroundTagListen,
+    );
+  }
+
+  // Streams
+  StreamController<NfcWriteState>? _writeController;
+  late final StreamController<NfcData?> _backgroundTagController;
+  NfcData? _initialTag;
+  bool _initialTagConsumed = false;
+  NfcData? _bufferedTag;
+
+  void _onBackgroundTagListen() {
+    if (_bufferedTag != null) {
+      _backgroundTagController.add(_bufferedTag);
+      _bufferedTag = null;
+    }
+  }
+
+  // Dynamic tag handler strategy
+  Future<void> Function(NfcTag)? _onTagDiscovered;
+
+  @override
+  Stream<NfcData?> get backgroundTagStream => _backgroundTagController.stream;
+
+  @override
+  Future<NfcData?> getInitialTag() async {
+    if (_initialTagConsumed) {
+      return null;
+    }
+    _initialTagConsumed = true;
+    return _initialTag;
+  }
+
+  @override
+  Future<void> init() async {
+    WidgetsBinding.instance.addObserver(this);
+    _startNfcSession();
+    await _checkLaunchIntent();
+    _onTagDiscovered = _handleBackgroundTag;
+
+    NfcManager.instance.checkAvailability().then((available) {
+      if (available != NfcAvailability.enabled) {
+        // Handle error if needed
+      }
+    });
+  }
+
+  void _startNfcSession() {
+    NfcManager.instance
+        .startSession(
+          pollingOptions: NfcPollingOption.values.toSet(),
+          onDiscovered: (tag) async {
+            if (_onTagDiscovered != null) {
+              await _onTagDiscovered!(tag);
+            }
+          },
+        )
+        .then((_) {})
+        .catchError((e) {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        NfcManager.instance.stopSession();
+        break;
+      case AppLifecycleState.resumed:
+        _startNfcSession();
+        break;
+      default:
+        break;
+    }
+  }
+
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NfcManager.instance.stopSession();
+    _cleanupStream();
+    _backgroundTagController.close();
+  }
+
+  Future<void> _handleBackgroundTag(NfcTag tag) async {
+    try {
+      final data = NfcData(tag);
+      if (_backgroundTagController.hasListener) {
+        _backgroundTagController.add(data);
+      } else {
+        _bufferedTag = data;
+      }
+    } catch (e) {
+      // Ignored
+    }
+  }
+
+  // --- Manual NDEF Record Creation Helpers ---
+  NdefRecord _createRecord(NfcWriteData data) {
+    if (data is NfcWriteDataUri) {
+      return _createUriRecord(data.uri);
+    } else if (data is NfcWriteDataText) {
+      return _createTextRecord(data.text);
+    } else if (data is NfcWriteDataMime) {
+      return NdefRecord(
+        typeNameFormat: TypeNameFormat.media,
+        type: Uint8List.fromList(utf8.encode(data.type)),
+        identifier: Uint8List(0),
+        payload: Uint8List.fromList(data.data),
+      );
+    } else if (data is NfcWriteDataExternal) {
+      return NdefRecord(
+        typeNameFormat: TypeNameFormat.external,
+        type: Uint8List.fromList(utf8.encode('${data.domain}:${data.type}')),
+        identifier: Uint8List(0),
+        payload: Uint8List.fromList(data.data),
+      );
+    } else if (data is NfcWriteDataCustom) {
+      return NdefRecord(
+        typeNameFormat: TypeNameFormat.values[data.tnf],
+        type: Uint8List.fromList(data.type),
+        identifier: Uint8List.fromList(data.id),
+        payload: Uint8List.fromList(data.payload),
+      );
+    }
+    throw UnimplementedError('Unknown NfcWriteData type');
+  }
+
+  NdefRecord _createUriRecord(Uri uri) {
+    final uriString = uri.toString();
+    int prefixCode = 0x00;
+    String content = uriString;
+    if (uriString.startsWith('https://www.')) {
+      prefixCode = 0x02;
+      content = uriString.substring(12);
+    } else if (uriString.startsWith('http://www.')) {
+      prefixCode = 0x01;
+      content = uriString.substring(11);
+    } else if (uriString.startsWith('https://')) {
+      prefixCode = 0x04;
+      content = uriString.substring(8);
+    } else if (uriString.startsWith('http://')) {
+      prefixCode = 0x03;
+      content = uriString.substring(7);
+    }
+    final payload = <int>[prefixCode, ...utf8.encode(content)];
+    return NdefRecord(
+      typeNameFormat: TypeNameFormat.wellKnown,
+      type: Uint8List.fromList([0x55]),
+      identifier: Uint8List(0),
+      payload: Uint8List.fromList(payload),
+    );
+  }
+
+  NdefRecord _createTextRecord(String text) {
+    const languageCode = 'en';
+    final languageBytes = utf8.encode(languageCode);
+    final textBytes = utf8.encode(text);
+    final statusByte = languageBytes.length;
+    final payload = <int>[statusByte, ...languageBytes, ...textBytes];
+    return NdefRecord(
+      typeNameFormat: TypeNameFormat.wellKnown,
+      type: Uint8List.fromList([0x54]),
+      identifier: Uint8List(0),
+      payload: Uint8List.fromList(payload),
+    );
+  }
+
+  @override
+  Future<Stream<NfcWriteState>> startWrite(
+    List<NfcWriteData> dataList, {
+    bool allowOverwrite = false,
+  }) async {
+    _cleanupStream();
+    _writeController = StreamController<NfcWriteState>();
+    _onTagDiscovered = (tag) async {
+      await _handleWriteTag(tag, dataList, allowOverwrite);
+    };
+    await NfcManager.instance.stopSession();
+    _startNfcSession();
+    _writeController!.add(NfcWriteLoading());
+    return _writeController!.stream;
+  }
+
+  Future<void> _handleWriteTag(
+    NfcTag tag,
+    List<NfcWriteData> targetData,
+    bool allowOverwrite,
+  ) async {
+    if (_writeController == null) return;
+    try {
+      final ndef = Ndef.from(tag);
+      if (ndef == null) throw Exception('Tag is not NDEF compatible');
+      if (!ndef.isWritable) throw Exception('Tag is not writable');
+
+      final nfcData = NfcData(tag);
+      final currentMessage = await nfcData.getOrReadMessage();
+      if (!allowOverwrite &&
+          currentMessage != null &&
+          currentMessage.records.isNotEmpty) {
+        _writeController!.add(NfcWriteOverwriteRequired());
+        return;
+      }
+      final records = targetData.map(_createRecord).toList();
+      final message = NdefMessage(records: records);
+      if (message.byteLength > ndef.maxSize) {
+        _writeController!.add(
+          NfcCapacityError(message.byteLength, ndef.maxSize),
+        );
+        return;
+      }
+      await ndef.write(message: message);
+      _writeController!.add(NfcWriteSuccess());
+    } catch (e) {
+      _writeController!.add(NfcWriteError(e.toString()));
+    }
+  }
+
+  @override
+  void resetSession() {
+    _cleanupStream();
+    _onTagDiscovered = _handleBackgroundTag;
+
+    // Clear the current stream state by adding null (Idle)
+    if (_backgroundTagController.hasListener) {
+      _backgroundTagController.add(null);
+    }
+
+    NfcManager.instance.stopSession().catchError((_) {}).whenComplete(() {
+      _startNfcSession();
+    });
+  }
+
+  void _cleanupStream() {
+    if (_writeController != null && !_writeController!.isClosed) {
+      _writeController!.close();
+    }
+    _writeController = null;
+  }
+
+  Future<void> _checkLaunchIntent() async {
+    try {
+      final dynamic result = await _platform.invokeMethod(
+        'getLaunchNdefMessage',
+      );
+      if (result != null && result is Map) {
+        final records = (result['records'] as List).map((r) {
+          return NdefRecord(
+            typeNameFormat: TypeNameFormat.values[r['typeNameFormat'] as int],
+            type: r['type'] as Uint8List,
+            identifier: r['identifier'] as Uint8List,
+            payload: r['payload'] as Uint8List,
+          );
+        }).toList();
+        final message = NdefMessage(records: records);
+        final data = NfcData.fromManual(message);
+
+        // Store as initial tag
+        _initialTag = data;
+      }
+    } catch (e) {
+      // Ignored
+    }
+  }
+}

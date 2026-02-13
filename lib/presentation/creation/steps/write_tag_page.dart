@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 
 class WriteTagPage extends ConsumerStatefulWidget {
@@ -39,7 +40,7 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             ref.read(creationProvider.notifier).backToLockConfig();
-            context.goNamed('CCF');
+            context.goNamed(AppRoute.creationConfig.name);
           },
         ),
       ),
@@ -79,6 +80,7 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
+          actionsAlignment: MainAxisAlignment.center,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -93,9 +95,9 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
               onPressed: () {
                 ref.read(creationProvider.notifier).finishWriting();
                 Navigator.of(context).pop(); // Close Dialog
-                context.goNamed('HOM'); // Go to Home
+                context.goNamed(AppRoute.home.name); // Go to Home
               },
-              child: const Text("OK (ホームへ戻る)"),
+              child: const Text("ホームへ戻る"),
             ),
           ],
         );

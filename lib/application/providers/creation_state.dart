@@ -43,6 +43,9 @@ abstract class CreationState with _$CreationState {
     // For Pattern+PIN: Second stage (PIN input after Pattern)
     @Default(false) bool isLockSecondStage,
     @Default("") String tempFirstLockInput,
+
+    // Edit Mode (from SVS)
+    @Default(false) bool isEditMode,
   }) = _CreationState;
 
   factory CreationState.fromJson(Map<String, dynamic> json) =>

@@ -17,11 +17,11 @@ abstract class NfcTagSpec with _$NfcTagSpec {
   static NfcTagSpec fromType(NfcTagType type) {
     switch (type) {
       case NfcTagType.ntag213:
-        return const NfcTagSpec(type: NfcTagType.ntag213, maxBytes: 144);
+        return const NfcTagSpec(type: NfcTagType.ntag213, maxBytes: 137);
       case NfcTagType.ntag215:
-        return const NfcTagSpec(type: NfcTagType.ntag215, maxBytes: 504);
+        return const NfcTagSpec(type: NfcTagType.ntag215, maxBytes: 492);
       case NfcTagType.ntag216:
-        return const NfcTagSpec(type: NfcTagType.ntag216, maxBytes: 888);
+        return const NfcTagSpec(type: NfcTagType.ntag216, maxBytes: 868);
       case NfcTagType.unknown:
         return const NfcTagSpec(type: NfcTagType.unknown, maxBytes: 0);
     }

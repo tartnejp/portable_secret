@@ -4,12 +4,23 @@ import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import '../widgets/pattern_lock.dart';
 import '../../application/providers/encryption_providers.dart';
+import '../../router_provider.dart';
+import '../../domain/value_objects/lock_method.dart';
+import 'secret_view_screen.dart'; // Import for SecretViewArgs
 
 class UnlockPatternScreen extends ConsumerStatefulWidget {
   final String? encryptedText;
   final int? lockType;
+  final int? capacity;
+  final bool isManualUnlockRequired;
 
-  const UnlockPatternScreen({super.key, this.encryptedText, this.lockType});
+  const UnlockPatternScreen({
+    super.key,
+    this.encryptedText,
+    this.lockType,
+    this.capacity,
+    this.isManualUnlockRequired = false,
+  });
 
   @override
   ConsumerState<UnlockPatternScreen> createState() =>
@@ -35,8 +46,14 @@ class _UnlockPatternScreenState extends ConsumerState<UnlockPatternScreen> {
     if (widget.lockType == 3) {
       if (mounted) {
         context.pushNamed(
-          'UPI',
-          extra: {'encryptedText': widget.encryptedText, 'pattern': pattern},
+          AppRoute.unlockPin.name,
+          extra: {
+            'encryptedText': widget.encryptedText,
+            'pattern': pattern,
+            'lockType': widget.lockType,
+            'capacity': widget.capacity,
+            'isManualUnlockRequired': widget.isManualUnlockRequired,
+          },
         );
       }
       return;
@@ -54,7 +71,15 @@ class _UnlockPatternScreenState extends ConsumerState<UnlockPatternScreen> {
       if (mounted) {
         // Transition to next screen (content view)
         // Transition using GoRouter
-        context.pushNamed('SVS', extra: secret);
+        final args = SecretViewArgs(
+          secret: secret,
+          lockType: widget.lockType != null
+              ? LockType.values[widget.lockType!]
+              : LockType.pattern, // Fallback?
+          isManualUnlockRequired: widget.isManualUnlockRequired,
+          capacity: widget.capacity ?? 0,
+        );
+        context.pushNamed(AppRoute.secretView.name, extra: args);
       }
     } catch (e) {
       if (mounted) {

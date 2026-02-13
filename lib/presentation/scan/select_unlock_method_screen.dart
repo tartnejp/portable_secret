@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../router_provider.dart';
 
 import '../../domain/value_objects/lock_method.dart';
 
 class SelectUnlockMethodScreen extends ConsumerWidget {
   final String encryptedText;
+  final int capacity;
 
-  const SelectUnlockMethodScreen({super.key, required this.encryptedText});
+  const SelectUnlockMethodScreen({
+    super.key,
+    required this.encryptedText,
+    required this.capacity,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const extraBase = {'isManualUnlockRequired': true};
     return Scaffold(
       appBar: AppBar(title: const Text('ロック解除方法の選択')),
       body: ListView(
@@ -27,10 +34,12 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
             title: const Text('パスワード'),
             onTap: () {
               context.pushNamed(
-                'UPS',
+                AppRoute.unlockPassword.name,
                 extra: {
                   'encryptedText': encryptedText,
                   'lockType': LockType.password.index,
+                  'capacity': capacity,
+                  ...extraBase,
                 },
               );
             },
@@ -40,10 +49,12 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
             title: const Text('パターン'),
             onTap: () {
               context.pushNamed(
-                'UPA',
+                AppRoute.unlockPattern.name,
                 extra: {
                   'encryptedText': encryptedText,
                   'lockType': LockType.pattern.index,
+                  'capacity': capacity,
+                  ...extraBase,
                 },
               );
             },
@@ -53,10 +64,12 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
             title: const Text('PIN'),
             onTap: () {
               context.pushNamed(
-                'UPI',
+                AppRoute.unlockPin.name,
                 extra: {
                   'encryptedText': encryptedText,
                   'lockType': LockType.pin.index,
+                  'capacity': capacity,
+                  ...extraBase,
                 },
               );
             },
@@ -66,10 +79,12 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
             title: const Text('パターン + PIN'),
             onTap: () {
               context.pushNamed(
-                'UPA',
+                AppRoute.unlockPattern.name,
                 extra: {
                   'encryptedText': encryptedText,
                   'lockType': LockType.patternAndPin.index,
+                  'capacity': capacity,
+                  ...extraBase,
                 },
               );
             },

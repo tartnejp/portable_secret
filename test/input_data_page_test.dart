@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:portable_sec/application/providers/creation_providers.dart';
-import 'package:portable_sec/application/providers/di/services_provider.dart';
-import 'package:portable_sec/application/services/nfc_service_interface.dart';
-import 'package:portable_sec/infrastructure/services/nfc_components/nfc_data.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart';
 import 'package:portable_sec/presentation/creation/steps/input_data_page.dart';
 
 // Minimal Mock NFC Service
@@ -27,6 +24,11 @@ class MockNfcService implements NfcService {
     bool allowOverwrite = false,
   }) async {
     return const Stream.empty();
+  }
+
+  @override
+  Future<NfcData?> getInitialTag() async {
+    return null;
   }
 }
 
@@ -87,6 +89,7 @@ void main() {
       }
       return false;
     });
+    expect(richTextFinder, findsOneWidget);
     // Note: TextField label might be wrapped deeply, but let's check if we can find the hint text at least
     expect(find.widgetWithText(TextField, '例: user1'), findsOneWidget);
 

@@ -21,15 +21,33 @@ final routeObserverProvider = Provider(
   (ref) => RouteObserver<ModalRoute<void>>(),
 );
 
+enum AppRoute {
+  home('HOM-'),
+  creation('CRE'),
+  creationLockType('CLT'),
+  creationCapacity('CCA'),
+  creationInput('CIN'),
+  creationConfig('CCF'),
+  creationWrite('CWR'),
+  selectUnlock('SEL'),
+  unlockPassword('UPS'),
+  unlockPin('UPI'),
+  unlockPattern('UPA'),
+  secretView('SVS');
+
+  final String name;
+  const AppRoute(this.name);
+}
+
 List<RouteBase> get appRoutes => [
   GoRoute(
     path: '/',
-    name: 'HOM', // Home
+    name: AppRoute.home.name, // Home
     builder: (context, state) => const HomeScreen(),
   ),
   GoRoute(
     path: '/creation',
-    name: 'CRE',
+    name: AppRoute.creation.name,
     redirect: (context, state) {
       final path = state.uri.path;
       debugPrint('Router: Redirect check on $path');
@@ -42,79 +60,91 @@ List<RouteBase> get appRoutes => [
     routes: [
       GoRoute(
         path: 'locktype',
-        name: 'CLT',
+        name: AppRoute.creationLockType.name,
         builder: (context, state) => const SelectLockTypePage(),
       ),
       GoRoute(
         path: 'capacity',
-        name: 'CCA',
+        name: AppRoute.creationCapacity.name,
         builder: (context, state) => const CapacityCheckPage(),
       ),
       GoRoute(
         path: 'input',
-        name: 'CIN',
+        name: AppRoute.creationInput.name,
         builder: (context, state) => const InputDataPage(),
       ),
       GoRoute(
         path: 'config',
-        name: 'CCF',
+        name: AppRoute.creationConfig.name,
         builder: (context, state) => const ConfigLockPage(),
       ),
       GoRoute(
         path: 'write',
-        name: 'CWR',
+        name: AppRoute.creationWrite.name,
         builder: (context, state) => const WriteTagPage(),
       ),
     ],
   ),
   GoRoute(
     path: '/select-unlock',
-    name: 'SEL', // Select Unlock Method
+    name: AppRoute.selectUnlock.name, // Select Unlock Method
     builder: (context, state) {
       final extra = state.extra as Map<String, dynamic>?;
       return SelectUnlockMethodScreen(
         encryptedText: extra?['encryptedText'] as String,
+        capacity: extra?['capacity'] as int? ?? 0,
       );
     },
   ),
   GoRoute(
     path: '/unlock/password',
-    name: 'UPS', // Unlock Password
+    name: AppRoute.unlockPassword.name, // Unlock Password
     builder: (context, state) {
       final extra = state.extra as Map<String, dynamic>?;
       return UnlockPasswordScreen(
-        encryptedText: extra?['encryptedText'] as String,
+        encryptedText: extra?['encryptedText'] as String?,
+        lockType: extra?['lockType'] as int?,
+        capacity: extra?['capacity'] as int?,
+        isManualUnlockRequired:
+            extra?['isManualUnlockRequired'] as bool? ?? false,
       );
     },
   ),
   GoRoute(
     path: '/unlock/pin',
-    name: 'UPI', // Unlock PIN
+    name: AppRoute.unlockPin.name, // Unlock PIN
     builder: (context, state) {
       final extra = state.extra as Map<String, dynamic>?;
       return UnlockPinScreen(
         encryptedText: extra?['encryptedText'] as String?,
         pattern: extra?['pattern'] as String?,
+        lockType: extra?['lockType'] as int?,
+        capacity: extra?['capacity'] as int?,
+        isManualUnlockRequired:
+            extra?['isManualUnlockRequired'] as bool? ?? false,
       );
     },
   ),
   GoRoute(
     path: '/unlock/pattern',
-    name: 'UPA', // Unlock Pattern
+    name: AppRoute.unlockPattern.name, // Unlock Pattern
     builder: (context, state) {
       final extra = state.extra as Map<String, dynamic>?;
       return UnlockPatternScreen(
         encryptedText: extra?['encryptedText'] as String?,
         lockType: extra?['lockType'] as int?,
+        capacity: extra?['capacity'] as int?,
+        isManualUnlockRequired:
+            extra?['isManualUnlockRequired'] as bool? ?? false,
       );
     },
   ),
   GoRoute(
     path: '/secret-view',
-    name: 'SVS', // Secret View Screen
+    name: AppRoute.secretView.name, // Secret View Screen
     builder: (context, state) {
-      final secret = state.extra as SecretData;
-      return SecretViewScreen(secret: secret);
+      final args = state.extra as SecretViewArgs;
+      return SecretViewScreen(args: args);
     },
   ),
 ];

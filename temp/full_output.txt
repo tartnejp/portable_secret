@@ -1,0 +1,6 @@
+00:00 +0: loading C:/Users/sct/dev-psec/portable_sec/packages/nfc_toolkit/test/state/nfc_detection_test.dart
+00:00 +0: Initial Tag is emitted followed by Generic
+00:00 +1: Stream emits IdleDetection when null is received
+00:00 +2: Stream emits GenericNfcDetected when no specific detection matches
+00:00 +3: Read Error prevents other detections
+00:01 +4: All tests passed!

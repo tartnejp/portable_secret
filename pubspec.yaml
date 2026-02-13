@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   riverpod: ^3.1.0
   riverpod_annotation: ^4.0.0
+  nfc_toolkit:
+    path: ./packages/nfc_toolkit
   nfc_manager: ^4.1.1
   nfc_manager_ndef: ^1.1.0
   encrypt: ^5.0.3

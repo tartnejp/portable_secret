@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:portable_sec/application/providers/di/services_provider.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart';
 import 'package:portable_sec/presentation/home/home_screen.dart';
 import 'package:portable_sec/router_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

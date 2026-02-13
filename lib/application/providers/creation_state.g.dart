@@ -29,6 +29,7 @@ _CreationState _$CreationStateFromJson(Map<String, dynamic> json) =>
       isManualUnlockRequired: json['isManualUnlockRequired'] as bool? ?? true,
       isLockSecondStage: json['isLockSecondStage'] as bool? ?? false,
       tempFirstLockInput: json['tempFirstLockInput'] as String? ?? "",
+      isEditMode: json['isEditMode'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$CreationStateToJson(_CreationState instance) =>
@@ -46,6 +47,7 @@ Map<String, dynamic> _$CreationStateToJson(_CreationState instance) =>
       'isManualUnlockRequired': instance.isManualUnlockRequired,
       'isLockSecondStage': instance.isLockSecondStage,
       'tempFirstLockInput': instance.tempFirstLockInput,
+      'isEditMode': instance.isEditMode,
     };
 
 const _$CreationStepEnumMap = {

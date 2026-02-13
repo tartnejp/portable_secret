@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 
 class CapacityCheckPage extends ConsumerStatefulWidget {
@@ -23,7 +24,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
   void _checkTransition(CreationState? previous, CreationState next) {
     if (next.step == CreationStep.inputData &&
         (previous?.step != CreationStep.inputData)) {
-      context.goNamed('CIN');
+      context.goNamed(AppRoute.creationInput.name);
     }
   }
 
@@ -49,7 +50,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             notifier.backToMethodSelection();
-            context.goNamed('CLT');
+            context.goNamed(AppRoute.creationLockType.name);
           },
         ),
       ),
@@ -102,23 +103,23 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text("NTAG213 (144 bytes)"),
+              title: const Text("NTAG213 (137 bytes)"),
               onTap: () {
-                notifier.selectManualCapacity(144);
+                notifier.selectManualCapacity(137);
                 Navigator.pop(context); // Close bottom sheet
               },
             ),
             ListTile(
-              title: const Text("NTAG215 (504 bytes)"),
+              title: const Text("NTAG215 (492 bytes)"),
               onTap: () {
-                notifier.selectManualCapacity(504);
+                notifier.selectManualCapacity(492);
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: const Text("NTAG216 (888 bytes)"),
+              title: const Text("NTAG216 (868 bytes)"),
               onTap: () {
-                notifier.selectManualCapacity(888);
+                notifier.selectManualCapacity(868);
                 Navigator.pop(context);
               },
             ),

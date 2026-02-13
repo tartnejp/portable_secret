@@ -50,5 +50,7 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>NFCタグをスキャンして情報を読み取るために使用します。</string>
 </dict>
 </plist>
