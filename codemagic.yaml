@@ -6,10 +6,8 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-      ios_signing:
-        distribution_type: development
-        bundle_identifier: com.example.portableSec
-
+      # なくても動くが、バージョン固定のために推奨
+      cocoapods: default
     cache:
       cache_paths:
         - $HOME/.pub-cache
@@ -19,6 +17,12 @@ workflows:
       - name: Flutter pub get
         script: flutter packages pub get
         
+      - name: Install CocoaPods
+        script: |
+          # なくてもFlutter側でビルドしてくれるが、ここで独立して実行することで、ここの段階のエラーに気づける
+          # iOSビルドのエラーの8割は pod install 周り（依存関係の競合やバージョン不整合）
+          find . -name "Podfile" -execdir pod install \;
+
       - name: Build Unsigned .app
         script: |
           # 1. まず署名なしでビルド
