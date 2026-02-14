@@ -12,9 +12,10 @@ class DebugInfoOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!kDebugMode) {
-      return child;
-    }
+    //todo 戻す
+    // if (!kDebugMode) {
+    //   return child;
+    // }
 
     return Stack(
       children: [
