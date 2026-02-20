@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; //kDebugModeで使う
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers/package_info_provider.dart';
@@ -12,10 +12,9 @@ class DebugInfoOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //todo 戻す
-    // if (!kDebugMode) {
-    //   return child;
-    // }
+    if (!kDebugMode) {
+      return child;
+    }
 
     return Stack(
       children: [

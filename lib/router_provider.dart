@@ -14,7 +14,8 @@ import 'package:portable_sec/presentation/scan/unlock_password_screen.dart';
 import 'package:portable_sec/presentation/scan/unlock_pin_screen.dart';
 import 'package:portable_sec/presentation/scan/unlock_pattern_screen.dart';
 import 'package:portable_sec/presentation/scan/secret_view_screen.dart';
-import 'package:portable_sec/domain/value_objects/secret_data.dart';
+import 'package:portable_sec/presentation/scan/prompt_rescan_screen.dart';
+// import 'package:portable_sec/domain/value_objects/secret_data.dart';
 
 final navigatorKeyProvider = Provider((ref) => GlobalKey<NavigatorState>());
 final routeObserverProvider = Provider(
@@ -33,6 +34,7 @@ enum AppRoute {
   unlockPassword('UPS'),
   unlockPin('UPI'),
   unlockPattern('UPA'),
+  promptRescan('PRS'),
   secretView('SVS');
 
   final String name;
@@ -138,6 +140,12 @@ List<RouteBase> get appRoutes => [
             extra?['isManualUnlockRequired'] as bool? ?? false,
       );
     },
+  ),
+  GoRoute(
+    path: '/unlock',
+    name:
+        AppRoute.promptRescan.name, // Prompt Rescan Screen for Universal Links
+    builder: (context, state) => const PromptRescanScreen(),
   ),
   GoRoute(
     path: '/secret-view',

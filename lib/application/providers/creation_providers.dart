@@ -304,6 +304,9 @@ class CreationNotifier extends _$CreationNotifier {
       void handleWrite(bool allowOverwrite) async {
         try {
           final stream = await nfc.startWrite([
+            NfcWriteDataUri(
+              Uri.parse('https://static-site-wzq.pages.dev/unlock'),
+            ),
             NfcWriteDataMime('application/portablesec', payloadBytes),
           ], allowOverwrite: allowOverwrite);
 

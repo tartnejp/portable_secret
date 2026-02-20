@@ -9,7 +9,7 @@
 	</array>
     <key>com.apple.developer.associated-domains</key>
     <array>
-        <string>applinks:static-site-wzq.pages.dev?mode=developer</string>
+        <string>applinks:static-site-wzq.pages.dev</string>
     </array>
 </dict>
 </plist>

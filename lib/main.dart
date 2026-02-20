@@ -56,6 +56,9 @@ class MainApp extends ConsumerWidget {
               },
               disableGenericDetectionRoutes: {
                 AppRoute.home.name, // Enable overlay on Home
+                AppRoute
+                    .promptRescan
+                    .name, // Enable overlay on Prompt Rescan Screen
                 // Add other routes if needed
               },
               child: child!,

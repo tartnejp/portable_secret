@@ -6,7 +6,7 @@ import '../../domain/value_objects/lock_method.dart';
 import '../../infrastructure/repositories/draft_repository_impl.dart';
 import 'package:nfc_toolkit/nfc_toolkit.dart'; // Imports nfcServiceProvider, NfcDetectionRefExtension, GenericNfcDetected
 import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
-import '../../application/nfc/url_detection.dart'; // Imports UrlDetection (optional usage)
+// import '../../application/nfc/url_detection.dart'; // Imports UrlDetection (optional usage)
 
 import '../../router_provider.dart';
 
