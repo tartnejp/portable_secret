@@ -18,7 +18,7 @@ class MockNfcService implements NfcService {
   Future<void> init() async {}
 
   @override
-  void resetSession() {}
+  void resetSession({String? alertMessage}) {}
 
   @override
   Future<Stream<NfcWriteState>> startWrite(

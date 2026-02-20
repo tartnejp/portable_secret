@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Add defaultTargetPlatform
 import 'package:flutter/services.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/ndef_record.dart'; // Explicit import for NdefRecord
@@ -19,7 +20,8 @@ abstract class NfcService {
   Future<void> init();
 
   /// Resets the NFC session to background idle mode.
-  void resetSession();
+  /// On iOS, this triggers the native scan UI and can show [alertMessage].
+  void resetSession({String? alertMessage});
 
   /// Stream of tags detected while not in explicit scan/write mode
   Stream<NfcData?> get backgroundTagStream;
@@ -136,6 +138,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   // Dynamic tag handler strategy
   Future<void> Function(NfcTag)? _onTagDiscovered;
+  Timer? _sessionTimeout;
 
   @override
   Stream<NfcData?> get backgroundTagStream => _backgroundTagController.stream;
@@ -155,7 +158,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   @override
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
-    _startNfcSession();
     await _checkLaunchIntent();
     _onTagDiscovered = _handleBackgroundTag;
 
@@ -164,20 +166,52 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
         // Handle error if needed
       }
     });
+
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      _startNfcSession();
+    }
   }
 
-  void _startNfcSession() {
+  void _startNfcSession({String? alertMessage, Duration? timeout}) {
+    _sessionTimeout?.cancel();
+
+    if (timeout != null) {
+      _sessionTimeout = Timer(timeout, () {
+        NfcManager.instance
+            .stopSession(errorMessageIos: 'タイムアウトしました')
+            .catchError((_) {});
+        final errorMsg = 'タイムアウトしました';
+        if (_writeController != null && !_writeController!.isClosed) {
+          _writeController!.add(NfcWriteError(errorMsg));
+        } else if (_errorController.hasListener) {
+          _errorController.add(NfcError(message: errorMsg));
+        }
+      });
+    }
+
     NfcManager.instance
         .startSession(
           pollingOptions: NfcPollingOption.values.toSet(),
+          alertMessageIos: alertMessage ?? 'スキャンの準備ができました',
           onDiscovered: (tag) async {
+            _sessionTimeout?.cancel();
             if (_onTagDiscovered != null) {
               await _onTagDiscovered!(tag);
             }
           },
+          onSessionErrorIos: (error) {
+            _sessionTimeout?.cancel();
+            final dynamic e = error;
+            final String errorMsg = e.message.toString();
+            if (_writeController != null && !_writeController!.isClosed) {
+              _writeController!.add(NfcWriteError(errorMsg));
+            } else if (_errorController.hasListener) {
+              _errorController.add(NfcError(message: errorMsg));
+            }
+          },
         )
-        .then((_) {})
         .catchError((e) {
+          _sessionTimeout?.cancel();
           // Push the raw error directly so the UI can log/copy it.
           final errorMsg = e.toString();
           if (_writeController != null && !_writeController!.isClosed) {
@@ -190,6 +224,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (defaultTargetPlatform == TargetPlatform.iOS)
+      return; // Prevent auto-start on resume for iOS
+
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
@@ -306,7 +343,11 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       await _handleWriteTag(tag, dataList, allowOverwrite);
     };
     await NfcManager.instance.stopSession();
-    _startNfcSession();
+    _startNfcSession(
+      timeout: defaultTargetPlatform == TargetPlatform.iOS
+          ? const Duration(seconds: 10)
+          : null,
+    );
     _writeController!.add(NfcWriteLoading());
     return _writeController!.stream;
   }
@@ -346,8 +387,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   }
 
   @override
-  void resetSession() {
+  void resetSession({String? alertMessage}) {
     _cleanupStream();
+    _sessionTimeout?.cancel();
     _onTagDiscovered = _handleBackgroundTag;
 
     // Clear the current stream state by adding null (Idle)
@@ -356,7 +398,12 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     }
 
     NfcManager.instance.stopSession().catchError((_) {}).whenComplete(() {
-      _startNfcSession();
+      _startNfcSession(
+        alertMessage: alertMessage,
+        timeout: defaultTargetPlatform == TargetPlatform.iOS
+            ? const Duration(seconds: 10)
+            : null,
+      );
     });
   }
 

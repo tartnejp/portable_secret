@@ -53,6 +53,14 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
           as _i4.Stream<_i5.NfcData?>);
 
   @override
+  _i4.Stream<_i5.NfcError> get errorStream =>
+      (super.noSuchMethod(
+            Invocation.getter(#errorStream),
+            returnValue: _i4.Stream<_i5.NfcError>.empty(),
+          )
+          as _i4.Stream<_i5.NfcError>);
+
+  @override
   _i4.Future<_i4.Stream<_i3.NfcWriteState>> startWrite(
     List<_i3.NfcWriteData>? dataList, {
     bool? allowOverwrite = false,
@@ -79,8 +87,8 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
           as _i4.Future<void>);
 
   @override
-  void resetSession() => super.noSuchMethod(
-    Invocation.method(#resetSession, []),
+  void resetSession({String? alertMessage}) => super.noSuchMethod(
+    Invocation.method(#resetSession, [], {#alertMessage: alertMessage}),
     returnValueForMissingStub: null,
   );
 
