@@ -1,9 +1,17 @@
 workflows:
   ios-devsigned-build:
-    name: iOS Unsigned Build (for AS)
+    name: iOS PortableSec Build
+    integrations:
+      app_store_connect: "AppStoreConnect 0219"
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
+# 2. 自動コード署名（Automatic Code Signing）の設定
+      ios_signing:
+        #distribution_type: app_store # TestFlightの場合はapp_storeを指定
+        #bundle_identifier: com.poc.iosnfc # あなたのアプリのBundle ID
+        provisioning_profiles:
+          - portableSec_profile
       flutter: stable
       xcode: latest
       # なくても動くが、バージョン固定のために推奨
@@ -17,26 +25,42 @@ workflows:
       - name: Flutter pub get
         script: flutter packages pub get
         
-      - name: Install CocoaPods
+      # - name: Install CocoaPods
+      #   script: |
+      #     # なくてもFlutter側でビルドしてくれるが、ここで独立して実行することで、ここの段階のエラーに気づける
+      #     # iOSビルドのエラーの8割は pod install 周り（依存関係の競合やバージョン不整合）
+      #     find . -name "Podfile" -execdir pod install \;
+      - name: Set up code signing
         script: |
-          # なくてもFlutter側でビルドしてくれるが、ここで独立して実行することで、ここの段階のエラーに気づける
-          # iOSビルドのエラーの8割は pod install 周り（依存関係の競合やバージョン不整合）
-          find . -name "Podfile" -execdir pod install \;
-
-      - name: Build Unsigned .app
-        script: |
-          # 1. まず署名なしでビルド
-          flutter build ios --release --no-codesign
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles # ← これがないとXcodeに適用されない
           
-      - name: Payload into .ipa
+      - name: Check 
         script: |
-          # 2. .appを手動で.ipaにパッケージングする
-          cd build/ios/iphoneos
-          mkdir Payload
-          cp -r Runner.app Payload
-          zip -r Runner.ipa Payload
-          # 作成場所をCodemagicが認識できる場所に移動
-          mv Runner.ipa $CM_BUILD_DIR/Runner.ipa
+          # 適用されたか確認（ログで確認できる）
+          security find-identity -v -p codesigning
+          # export_options.plistの確認
+          cat /Users/builder/export_options.plist
+          # profile
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/
+          for f in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+            echo "=== $f entitlements ==="
+            security cms -D -i "$f" | plutil -extract Entitlements xml1 -o - -
+          done
+
+      - name: Build IPA for App Store / TestFlight
+        script: |
+          # Codemagicが自動生成したexport_options.plistを使用してIPAをビルド
+          flutter build ipa --release \
+          --export-options-plist=/Users/builder/export_options.plist \
+          --verbose 2>&1 | grep -E "error:|Provisioning|Signing|exportArchive"
 
     artifacts:
-      - Runner.ipa
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
