@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart';
 import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 
@@ -15,9 +16,6 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(creationProvider.notifier).writeToNfc();
-    });
   }
 
   @override
@@ -53,10 +51,12 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
             children: [
               const Icon(Icons.nfc, size: 100, color: Colors.orange),
               const SizedBox(height: 24),
-              const Text(
-                "NFCカードをタッチしてください\n(書き込み待機中...)",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18),
+              NfcSessionTriggerWidget(
+                instructionText: "NFCカードをタッチしてください\n(書き込み待機中...)",
+                buttonText: "書き込み開始",
+                onStartSession: () {
+                  ref.read(creationProvider.notifier).writeToNfc();
+                },
               ),
               if (state.error != null)
                 Padding(

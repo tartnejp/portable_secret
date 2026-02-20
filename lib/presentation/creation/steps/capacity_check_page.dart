@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart';
 import '../../../router_provider.dart';
 import '../../../application/providers/creation_providers.dart';
 
@@ -16,9 +17,6 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
   void initState() {
     super.initState();
     debugPrint('CapacityCheckPage: initState');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(creationProvider.notifier).startCapacityScan();
-    });
   }
 
   void _checkTransition(CreationState? previous, CreationState next) {
@@ -63,10 +61,12 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
             children: [
               const Icon(Icons.nfc, size: 80, color: Colors.blue),
               const SizedBox(height: 24),
-              const Text(
-                "NFCカードをタッチしてください\n書き込み可能なデータサイズを計測します",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
+              NfcSessionTriggerWidget(
+                instructionText: "NFCカードをタッチしてください\n書き込み可能なデータサイズを計測します",
+                buttonText: '計測開始',
+                onStartSession: () {
+                  ref.read(creationProvider.notifier).startCapacityScan();
+                },
               ),
               const SizedBox(height: 48),
               TextButton(

@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart'; // Added for WidgetsBinding
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod/riverpod.dart';
 import '../core/nfc_detection.dart';
 import '../nfc_service.dart';
+import '../nfc_data.dart'; // Add for NfcError
 
 import '../providers/nfc_detection_registry.dart';
 import '../riverpod/nfc_providers.dart';
@@ -52,7 +54,7 @@ nfcDetectionStreamProvider = StreamProvider<NfcDetection>((ref) async* {
 
     // 0. Check for read errors
     if (nfcData.readError != null) {
-      yield NfcError("読み取りエラー: ${nfcData.readError}");
+      yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
       continue;
     }
 
@@ -112,7 +114,9 @@ extension NfcDetectionRefExtension on Ref {
       next.when(
         data: (detection) {
           if (detection is T) {
-            onData(detection);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              onData(detection);
+            });
           }
         },
         error:
@@ -140,7 +144,9 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
       next.when(
         data: (detection) {
           if (detection is T) {
-            onData(detection);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              onData(detection);
+            });
           }
         },
         error:

@@ -1,6 +1,7 @@
 library nfc_toolkit;
 
 export 'src/nfc_data.dart';
+export 'src/ui/nfc_session_trigger_widget.dart';
 export 'src/nfc_service.dart';
 export 'src/riverpod/nfc_providers.dart';
 

@@ -48,15 +48,3 @@ final class IdleDetection extends NfcDetection {
   @override
   FutureOr<NfcDetection?> detect(NfcData data) => null;
 }
-
-/// A detection event representing a read error (IO exception, etc.).
-final class NfcError extends NfcDetection with OverlayDisplay {
-  final String message;
-  const NfcError(this.message);
-
-  @override
-  FutureOr<NfcDetection?> detect(NfcData data) => null;
-
-  @override
-  String get overlayMessage => message;
-}

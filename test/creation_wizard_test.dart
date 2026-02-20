@@ -12,6 +12,7 @@ import 'package:portable_sec/presentation/creation/steps/write_tag_page.dart';
 import 'package:portable_sec/presentation/home/home_screen.dart';
 import 'package:portable_sec/router_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portable_sec/application/providers/initialization_provider.dart';
 
 // Mock NfcService
 class MockNfcService implements NfcService {
@@ -32,6 +33,9 @@ class MockNfcService implements NfcService {
 
   @override
   Stream<NfcData> get backgroundTagStream => _backgroundTagController.stream;
+
+  @override
+  Stream<NfcError> get errorStream => const Stream.empty();
 
   @override
   Future<void> init() async {}
@@ -66,7 +70,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [nfcServiceProvider.overrideWithValue(mockNfcService)],
+        overrides: [
+          nfcServiceProvider.overrideWithValue(mockNfcService),
+          initializationProvider.overrideWith((ref) => Future.value()),
+        ],
         child: Consumer(
           builder: (context, ref, _) {
             final router = ref.watch(routerProvider);

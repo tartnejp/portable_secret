@@ -25,6 +25,8 @@ class MockNfcService implements NfcService {
 
   @override
   Stream<NfcData?> get backgroundTagStream => _streamController.stream;
+  @override
+  Stream<NfcError> get errorStream => const Stream.empty();
 
   @override
   Future<NfcData?> getInitialTag() async {

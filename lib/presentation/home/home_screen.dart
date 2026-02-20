@@ -153,10 +153,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             if (_isReading)
               const CircularProgressIndicator()
             else
-              Text(
-                _statusMessage,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16),
+              NfcSessionTriggerWidget(
+                instructionText: _statusMessage,
+                buttonText: '読み取り開始',
+                onStartSession: () {
+                  setState(() {
+                    _statusMessage = 'NFCタグをタッチしてください';
+                  });
+                  ref.read(nfcServiceProvider).resetSession();
+                },
               ),
             const SizedBox(height: 48),
             ElevatedButton.icon(

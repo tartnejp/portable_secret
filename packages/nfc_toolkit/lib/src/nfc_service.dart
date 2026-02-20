@@ -24,6 +24,9 @@ abstract class NfcService {
   /// Stream of tags detected while not in explicit scan/write mode
   Stream<NfcData?> get backgroundTagStream;
 
+  /// Stream of raw NFC errors caught during sessions (e.g., user canceled)
+  Stream<NfcError> get errorStream;
+
   /// Retrieves the tag data that triggered the app launch, if any.
   /// This should be consumed once.
   Future<NfcData?> getInitialTag();
@@ -113,11 +116,13 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     _backgroundTagController = StreamController<NfcData?>.broadcast(
       onListen: _onBackgroundTagListen,
     );
+    _errorController = StreamController<NfcError>.broadcast();
   }
 
   // Streams
   StreamController<NfcWriteState>? _writeController;
   late final StreamController<NfcData?> _backgroundTagController;
+  late final StreamController<NfcError> _errorController;
   NfcData? _initialTag;
   bool _initialTagConsumed = false;
   NfcData? _bufferedTag;
@@ -134,6 +139,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   @override
   Stream<NfcData?> get backgroundTagStream => _backgroundTagController.stream;
+
+  @override
+  Stream<NfcError> get errorStream => _errorController.stream;
 
   @override
   Future<NfcData?> getInitialTag() async {
@@ -169,7 +177,15 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           },
         )
         .then((_) {})
-        .catchError((e) {});
+        .catchError((e) {
+          // Push the raw error directly so the UI can log/copy it.
+          final errorMsg = e.toString();
+          if (_writeController != null && !_writeController!.isClosed) {
+            _writeController!.add(NfcWriteError(errorMsg));
+          } else if (_errorController.hasListener) {
+            _errorController.add(NfcError(message: errorMsg));
+          }
+        });
   }
 
   @override
@@ -192,6 +208,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     NfcManager.instance.stopSession();
     _cleanupStream();
     _backgroundTagController.close();
+    _errorController.close();
   }
 
   Future<void> _handleBackgroundTag(NfcTag tag) async {

@@ -11,6 +11,8 @@ import 'package:portable_sec/presentation/creation/steps/input_data_page.dart';
 class MockNfcService implements NfcService {
   @override
   Stream<NfcData> get backgroundTagStream => const Stream.empty();
+  @override
+  Stream<NfcError> get errorStream => const Stream.empty();
 
   @override
   Future<void> init() async {}

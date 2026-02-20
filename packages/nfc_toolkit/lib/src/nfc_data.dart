@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/nfc_manager_android.dart'; // Explicit import for NfcAAndroid etc.
 // ignore: unused_import
@@ -7,6 +8,29 @@ import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 // Let's assume proper types are available via nfc_manager since I cannot check file list.
 // If not, I will trust the User's snippet which had explicit android import.
 // import 'package:nfc_manager/platform_tags.dart'; // This failed providing this doesn't exist.
+// import 'package:nfc_manager/platform_tags.dart'; // This failed providing this doesn't exist.
+
+import 'core/nfc_detection.dart';
+
+enum NfcErrorType { unknown, userCanceled, systemError }
+
+class NfcError extends NfcDetection with OverlayDisplay {
+  final NfcErrorType type;
+  final String message;
+  final dynamic details;
+
+  const NfcError({
+    this.type = NfcErrorType.unknown,
+    required this.message,
+    this.details,
+  }) : super();
+
+  @override
+  FutureOr<NfcDetection?> detect(NfcData data) => null;
+
+  @override
+  String get overlayMessage => message;
+}
 
 class NfcData {
   final NfcTag? _tag;

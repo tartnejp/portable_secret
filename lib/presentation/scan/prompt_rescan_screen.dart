@@ -19,14 +19,6 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
   bool _isResumed = true;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(nfcServiceProvider).resetSession();
-    });
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final observer = ref.read(routeObserverProvider);
@@ -52,12 +44,6 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
   @override
   void didPopNext() {
     _isResumed = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (mounted) {
-        ref.read(nfcServiceProvider).resetSession();
-      }
-    });
   }
 
   @override
@@ -132,16 +118,18 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
           onPressed: () => context.goNamed(AppRoute.home.name),
         ),
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.nfc, size: 80, color: Colors.blue),
-            SizedBox(height: 24),
-            Text(
-              'アプリが起動しました。\nデータを復号するために\nもう一度NFCタグをタッチしてください。',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
+            const Icon(Icons.nfc, size: 80, color: Colors.blue),
+            const SizedBox(height: 24),
+            NfcSessionTriggerWidget(
+              instructionText: 'アプリが起動しました。\nデータを復号するために\nもう一度NFCタグをタッチしてください。',
+              buttonText: '読み取り開始',
+              onStartSession: () {
+                ref.read(nfcServiceProvider).resetSession();
+              },
             ),
           ],
         ),
