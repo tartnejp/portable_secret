@@ -4,17 +4,18 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
+import 'dart:ui' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:nfc_toolkit/src/nfc_data.dart' as _i5;
 import 'package:nfc_toolkit/src/nfc_service.dart' as _i3;
-import 'package:portable_sec/application/providers/creation_state.dart' as _i7;
+import 'package:portable_sec/application/providers/creation_state.dart' as _i8;
 import 'package:portable_sec/application/services/encryption_service.dart'
-    as _i8;
-import 'package:portable_sec/domain/value_objects/lock_method.dart' as _i9;
+    as _i9;
+import 'package:portable_sec/domain/value_objects/lock_method.dart' as _i10;
 import 'package:portable_sec/domain/value_objects/secret_data.dart' as _i2;
 import 'package:portable_sec/infrastructure/repositories/draft_repository_impl.dart'
-    as _i6;
+    as _i7;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -87,10 +88,46 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
           as _i4.Future<void>);
 
   @override
-  void resetSession({String? alertMessage}) => super.noSuchMethod(
-    Invocation.method(#resetSession, [], {#alertMessage: alertMessage}),
+  void startSessionWithTimeout({
+    String? alertMessage,
+    Duration? timeout,
+    _i6.VoidCallback? onTimeout,
+    void Function(String)? onError,
+  }) => super.noSuchMethod(
+    Invocation.method(#startSessionWithTimeout, [], {
+      #alertMessage: alertMessage,
+      #timeout: timeout,
+      #onTimeout: onTimeout,
+      #onError: onError,
+    }),
     returnValueForMissingStub: null,
   );
+
+  @override
+  void startSessionForIOS({
+    String? alertMessage,
+    Duration? timeout,
+    _i6.VoidCallback? onTimeout,
+    void Function(String)? onError,
+  }) => super.noSuchMethod(
+    Invocation.method(#startSessionForIOS, [], {
+      #alertMessage: alertMessage,
+      #timeout: timeout,
+      #onTimeout: onTimeout,
+      #onError: onError,
+    }),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void resetSession({String? alertMessage, void Function(String)? onError}) =>
+      super.noSuchMethod(
+        Invocation.method(#resetSession, [], {
+          #alertMessage: alertMessage,
+          #onError: onError,
+        }),
+        returnValueForMissingStub: null,
+      );
 
   @override
   _i4.Future<_i5.NfcData?> getInitialTag() =>
@@ -105,13 +142,13 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockWizardDraftRepository extends _i1.Mock
-    implements _i6.WizardDraftRepository {
+    implements _i7.WizardDraftRepository {
   MockWizardDraftRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<void> saveDraft(_i7.CreationState? state) =>
+  _i4.Future<void> saveDraft(_i8.CreationState? state) =>
       (super.noSuchMethod(
             Invocation.method(#saveDraft, [state]),
             returnValue: _i4.Future<void>.value(),
@@ -120,12 +157,12 @@ class MockWizardDraftRepository extends _i1.Mock
           as _i4.Future<void>);
 
   @override
-  _i4.Future<_i7.CreationState?> loadDraft() =>
+  _i4.Future<_i8.CreationState?> loadDraft() =>
       (super.noSuchMethod(
             Invocation.method(#loadDraft, []),
-            returnValue: _i4.Future<_i7.CreationState?>.value(),
+            returnValue: _i4.Future<_i8.CreationState?>.value(),
           )
-          as _i4.Future<_i7.CreationState?>);
+          as _i4.Future<_i8.CreationState?>);
 
   @override
   _i4.Future<void> deleteDraft() =>
@@ -148,13 +185,13 @@ class MockWizardDraftRepository extends _i1.Mock
 /// A class which mocks [EncryptionService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockEncryptionService extends _i1.Mock implements _i8.EncryptionService {
+class MockEncryptionService extends _i1.Mock implements _i9.EncryptionService {
   MockEncryptionService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<List<int>> encrypt(_i2.SecretData? data, _i9.LockMethod? lock) =>
+  _i4.Future<List<int>> encrypt(_i2.SecretData? data, _i10.LockMethod? lock) =>
       (super.noSuchMethod(
             Invocation.method(#encrypt, [data, lock]),
             returnValue: _i4.Future<List<int>>.value(<int>[]),

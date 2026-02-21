@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nfc_manager/ndef_record.dart';
@@ -41,7 +42,23 @@ class MockNfcService implements NfcService {
   Future<void> init() async {}
 
   @override
-  void resetSession({String? alertMessage}) {}
+  void resetSession({String? alertMessage, void Function(String)? onError}) {}
+
+  @override
+  void startSessionWithTimeout({
+    String? alertMessage,
+    Duration? timeout,
+    VoidCallback? onTimeout,
+    void Function(String)? onError,
+  }) {}
+
+  @override
+  void startSessionForIOS({
+    String? alertMessage,
+    Duration? timeout,
+    VoidCallback? onTimeout,
+    void Function(String)? onError,
+  }) {}
 
   Future<void> startSession({List<String>? pathPattern}) async {}
   Future<void> stopSession() async {}

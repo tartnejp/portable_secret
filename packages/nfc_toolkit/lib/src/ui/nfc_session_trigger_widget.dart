@@ -89,7 +89,27 @@ class _NfcSessionTriggerWidgetState
     setState(() {
       _isSessionActive = true;
     });
+
+    // We notify the parent that the trigger happened
     widget.onStartSession();
+
+    // Then explicitly start the session via toolkit for iOS with embedded callbacks.
+    ref
+        .read(nfcServiceProvider)
+        .startSessionForIOS(
+          alertMessage: widget.instructionText,
+          timeout: const Duration(seconds: 10),
+          onTimeout: () {
+            if (mounted) {
+              _handleError('タイムアウトしました');
+            }
+          },
+          onError: (msg) {
+            if (mounted) {
+              _handleError(msg);
+            }
+          },
+        );
   }
 
   @override
