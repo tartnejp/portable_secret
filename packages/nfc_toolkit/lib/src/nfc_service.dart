@@ -187,9 +187,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       }
     });
 
-    if (defaultTargetPlatform != TargetPlatform.iOS) {
-      _startNfcSession();
-    }
+    // if (defaultTargetPlatform != TargetPlatform.iOS) {
+    //   _startNfcSession();
+    // }
   }
 
   void _startNfcSession({
@@ -287,7 +287,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
         NfcManager.instance.stopSession();
         break;
       case AppLifecycleState.resumed:
-        _startNfcSession();
+        // _startNfcSession();
         break;
       default:
         break;
