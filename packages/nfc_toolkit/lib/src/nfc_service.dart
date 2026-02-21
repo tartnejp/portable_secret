@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; // Add defaultTargetPlatform
 import 'package:flutter/services.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:nfc_manager/nfc_manager_ios.dart';
 import 'package:nfc_manager/ndef_record.dart'; // Explicit import for NdefRecord
 import 'package:nfc_manager_ndef/nfc_manager_ndef.dart'; // Required for TypeNameFormat, NdefRecord etc in v4
 import 'nfc_data.dart';
@@ -225,14 +226,34 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           alertMessageIos: alertMessage ?? 'スキャンの準備ができました',
           onDiscovered: (tag) async {
             _sessionTimeout?.cancel();
-            if (_onTagDiscovered != null) {
-              await _onTagDiscovered!(tag);
+            try {
+              if (_onTagDiscovered != null) {
+                await _onTagDiscovered!(tag);
+              }
+              // Successfully processed (or gracefully handled), close the session on iOS
+              if (defaultTargetPlatform == TargetPlatform.iOS) {
+                await NfcManager.instance.stopSession();
+              }
+            } catch (e) {
+              if (defaultTargetPlatform == TargetPlatform.iOS) {
+                await NfcManager.instance.stopSession(
+                  errorMessageIos: 'エラーが発生しました: $e',
+                );
+              }
             }
           },
           onSessionErrorIos: (error) {
             _sessionTimeout?.cancel();
+
+            // Suppress the "User Canceled" error so it doesn't show as a red SnackBar
+            if (error.code ==
+                NfcReaderErrorCodeIos
+                    .readerSessionInvalidationErrorUserCanceled) {
+              return;
+            }
+
             final dynamic e = error;
-            final String errorMsg = e.message.toString();
+            final String errorMsg = (e.message ?? e.toString()).toString();
 
             if (onError != null) {
               onError(errorMsg);
