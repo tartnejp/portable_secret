@@ -38,10 +38,6 @@ abstract class NfcService {
     void Function(String)? onError,
   });
 
-  /// Resets the NFC session to background idle mode.
-  /// On iOS, this triggers the native scan UI and can show [alertMessage].
-  void resetSession({String? alertMessage, void Function(String)? onError});
-
   /// Stream of tags detected while not in explicit scan/write mode
   Stream<NfcData?> get backgroundTagStream;
 
@@ -147,7 +143,8 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   NfcData? _initialTag;
   bool _initialTagConsumed = false;
   NfcData? _bufferedTag;
-  bool _isIosSessionActive = false;
+  bool _isIosSessionActive =
+      false; // Intentionally left but unused, or simply removed
 
   void _onBackgroundTagListen() {
     if (_bufferedTag != null) {
@@ -187,9 +184,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       }
     });
 
-    // if (defaultTargetPlatform != TargetPlatform.iOS) {
-    //   _startNfcSession();
-    // }
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      _startNfcSession();
+    }
   }
 
   void _startNfcSession({
@@ -220,10 +217,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       });
     }
 
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      _isIosSessionActive = true;
-    }
-
     NfcManager.instance
         .startSession(
           pollingOptions: NfcPollingOption.values.toSet(),
@@ -236,9 +229,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           },
           onSessionErrorIos: (error) {
             _sessionTimeout?.cancel();
-            if (defaultTargetPlatform == TargetPlatform.iOS) {
-              _isIosSessionActive = false;
-            }
             final dynamic e = error;
             final String errorMsg = e.message.toString();
 
@@ -255,9 +245,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
         )
         .catchError((e) {
           _sessionTimeout?.cancel();
-          if (defaultTargetPlatform == TargetPlatform.iOS) {
-            _isIosSessionActive = false;
-          }
           // Push the raw error directly so the UI can log/copy it.
           final errorMsg = e.toString();
 
@@ -281,13 +268,10 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          _isIosSessionActive = false;
-        }
         NfcManager.instance.stopSession();
         break;
       case AppLifecycleState.resumed:
-        // _startNfcSession();
+        _startNfcSession();
         break;
       default:
         break;
@@ -296,9 +280,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      _isIosSessionActive = false;
-    }
     NfcManager.instance.stopSession();
     _cleanupStream();
     _backgroundTagController.close();
@@ -400,21 +381,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     _onTagDiscovered = (tag) async {
       await _handleWriteTag(tag, dataList, allowOverwrite);
     };
-    try {
-      // Allow enough time for stopSession to complete on iOS,
-      // as starting immediately after can cause "Multiple sessions cannot be active".
-      if (defaultTargetPlatform != TargetPlatform.iOS || _isIosSessionActive) {
-        await NfcManager.instance.stopSession().timeout(
-          const Duration(milliseconds: 500),
-        );
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          _isIosSessionActive = false;
-          await Future.delayed(
-            const Duration(milliseconds: 300),
-          ); // Delay for UI animation to clear
-        }
-      }
-    } catch (_) {}
+    // Stop session before start is removed to prevent iOS crash
     _startNfcSession(
       onError: onError,
       timeout: defaultTargetPlatform == TargetPlatform.iOS
@@ -460,41 +427,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   }
 
   @override
-  void resetSession({
-    String? alertMessage,
-    void Function(String)? onError,
-  }) async {
-    _cleanupStream();
-    _sessionTimeout?.cancel();
-    _onTagDiscovered = _handleBackgroundTag;
-
-    // Clear the current stream state by adding null (Idle)
-    if (_backgroundTagController.hasListener) {
-      _backgroundTagController.add(null);
-    }
-
-    try {
-      if (defaultTargetPlatform != TargetPlatform.iOS || _isIosSessionActive) {
-        await NfcManager.instance.stopSession().timeout(
-          const Duration(milliseconds: 500),
-        );
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          _isIosSessionActive = false;
-          await Future.delayed(const Duration(milliseconds: 300));
-        }
-      }
-    } catch (_) {}
-
-    _startNfcSession(
-      alertMessage: alertMessage,
-      onError: onError,
-      timeout: defaultTargetPlatform == TargetPlatform.iOS
-          ? const Duration(seconds: 10)
-          : null,
-    );
-  }
-
-  @override
   void startSessionWithTimeout({
     String? alertMessage,
     Duration? timeout,
@@ -505,17 +437,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     _sessionTimeout?.cancel();
     _onTagDiscovered = _handleBackgroundTag;
 
-    try {
-      if (defaultTargetPlatform != TargetPlatform.iOS || _isIosSessionActive) {
-        await NfcManager.instance.stopSession().timeout(
-          const Duration(milliseconds: 500),
-        );
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          _isIosSessionActive = false;
-          await Future.delayed(const Duration(milliseconds: 300));
-        }
-      }
-    } catch (_) {}
+    // Stop session before start is removed to prevent iOS crash
 
     _startNfcSession(
       alertMessage: alertMessage,

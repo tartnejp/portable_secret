@@ -121,16 +121,6 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
   );
 
   @override
-  void resetSession({String? alertMessage, void Function(String)? onError}) =>
-      super.noSuchMethod(
-        Invocation.method(#resetSession, [], {
-          #alertMessage: alertMessage,
-          #onError: onError,
-        }),
-        returnValueForMissingStub: null,
-      );
-
-  @override
   _i4.Future<_i5.NfcData?> getInitialTag() =>
       (super.noSuchMethod(
             Invocation.method(#getInitialTag, []),

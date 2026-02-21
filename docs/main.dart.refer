@@ -1,0 +1,358 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'package:nfc_manager/nfc_manager_ios.dart';
+import 'package:poc_ios_nfc/ndef_record_list_screen.dart';
+
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) =>
+          HomeScreen(currentLink: state.uri.toString()),
+    ),
+  ],
+  errorBuilder: (context, state) =>
+      HomeScreen(currentLink: state.uri.toString()),
+);
+
+void main() {
+  runApp(const ProviderScope(child: MainApp()));
+}
+
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(routerConfig: _router);
+  }
+}
+
+class HomeScreen extends ConsumerStatefulWidget {
+  final String? currentLink;
+  const HomeScreen({super.key, this.currentLink});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String _bundleId = 'Loading...';
+  String _teamId = 'Loading...';
+  String _appId = 'Loading...';
+  bool _isScanning = false;
+  final List<String> _debugLogs = [];
+
+  static const platform = MethodChannel('com.poc.iosnfc/app_info');
+
+  @override
+  void initState() {
+    super.initState();
+    _addLog('App Link POC Started');
+    _initAppInfo();
+  }
+
+  void _addLog(String message) {
+    if (!mounted) return; // Prevent setState call if unmounted
+    setState(() {
+      _debugLogs.insert(
+        0,
+        '${DateTime.now().second}:${DateTime.now().millisecond} - $message',
+      );
+      if (_debugLogs.length > 20) {
+        _debugLogs.removeLast();
+      }
+    });
+    debugPrint(message);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  Future<void> _initAppInfo() async {
+    String bundleId = 'Unknown';
+    String teamId = 'Unknown';
+    String appId = 'Unknown';
+
+    try {
+      final Map<Object?, Object?> result = await platform.invokeMethod(
+        'getAppInfo',
+      );
+      bundleId = result['bundleId'] as String? ?? 'Unknown';
+      teamId = result['teamId'] as String? ?? 'Unknown';
+      appId = result['appId'] as String? ?? 'Unknown';
+    } on PlatformException catch (e) {
+      bundleId = "Failed to get info: '${e.message}'";
+      teamId = "Error";
+      appId = "Error";
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _bundleId = bundleId;
+      _teamId = teamId;
+      _appId = appId;
+    });
+  }
+
+  Future<void> _tagRead() async {
+    setState(() {
+      _isScanning = true;
+    });
+
+    try {
+      _addLog('Starting NFC Read...');
+      NfcAvailability availability = await NfcManager.instance
+          .checkAvailability();
+      _addLog('NFC Availability: $availability');
+
+      if (availability != NfcAvailability.enabled) {
+        if (mounted) {
+          _addLog('NFC not available');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('NFC is not available on this device'),
+            ),
+          );
+          setState(() {
+            _isScanning = false;
+          });
+        }
+        _addLog('Forcing session start despite unavailability...');
+        // return; // Bypassing check for strict debugging
+      }
+
+      await NfcManager.instance.startSession(
+        pollingOptions: {NfcPollingOption.iso14443, NfcPollingOption.iso15693},
+        alertMessageIos: 'NFCタグに近づけてください',
+        onDiscovered: (NfcTag tag) async {
+          final ndef = NdefIos.from(tag);
+          if (ndef == null) {
+            // Not an NDEF tag
+            await NfcManager.instance.stopSession(
+              errorMessageIos: 'Not an NDEF tag',
+            );
+            return;
+          }
+
+          final message = ndef.cachedNdefMessage;
+          if (message == null) {
+            // Tag is empty or couldn't be read
+            await NfcManager.instance.stopSession(
+              errorMessageIos: 'Empty NDEF tag',
+            );
+            return;
+          }
+
+          await NfcManager.instance.stopSession();
+
+          if (mounted) {
+            setState(() {
+              _isScanning = false;
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    NdefRecordListScreen(records: message.records),
+              ),
+            );
+          }
+        },
+        onSessionErrorIos: (NfcReaderSessionErrorIos error) {
+          _addLog('Session Error: ${error.code.name}, ${error.message}');
+          if (mounted) {
+            setState(() {
+              _isScanning = false;
+            });
+
+            String errorMessage;
+            switch (error.code) {
+              case NfcReaderErrorCodeIos
+                  .readerSessionInvalidationErrorSessionTimeout:
+                errorMessage = 'スキャンがタイムアウトしました';
+                break;
+              case NfcReaderErrorCodeIos
+                  .readerSessionInvalidationErrorSystemIsBusy:
+                errorMessage = 'NFCシステムがビジーです。しばらくしてからお試しください';
+                break;
+              case NfcReaderErrorCodeIos
+                  .readerSessionInvalidationErrorUserCanceled:
+                errorMessage = 'キャンセルされました (Debug)';
+                break;
+              default:
+                errorMessage = 'NFCエラー (${error.code.name}): ${error.message}';
+            }
+
+            _addLog('Error Message: $errorMessage');
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(errorMessage)));
+          }
+        },
+      );
+    } catch (e) {
+      _addLog('Exception caught: $e');
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error starting NFC session: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Removed MaterialApp, returning Scaffold directly
+    return Scaffold(
+      appBar: AppBar(title: const Text('iOS NFC Universal Link POC')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Bundle ID
+              const Text(
+                'Bundle Identifier:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Text(_bundleId, style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 15),
+
+              // Team ID
+              const Text(
+                'Team ID:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Text(_teamId, style: const TextStyle(fontSize: 14)),
+              const SizedBox(height: 15),
+
+              // Full App ID
+              const Text(
+                'App ID (Full):',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              Text(
+                _appId,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              const Divider(),
+              const SizedBox(height: 20),
+
+              const SizedBox(height: 30),
+
+              // Universal Link
+              const Text(
+                'Latest Received Link:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                widget.currentLink == null || widget.currentLink == '/'
+                    ? 'No link received yet'
+                    : widget.currentLink!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, color: Colors.blue),
+              ),
+              const SizedBox(height: 30),
+
+              // NFC Reading Button
+              if (_isScanning)
+                Column(
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text('NFCタグに近づけてください...'),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () {
+                        NfcManager.instance.stopSession();
+                        if (mounted) {
+                          setState(() {
+                            _isScanning = false;
+                          });
+                        }
+                      },
+                      child: const Text('キャンセル'),
+                    ),
+                  ],
+                )
+              else
+                ElevatedButton(
+                  onPressed: _tagRead,
+                  child: const Text('NFCタグを読み取る'),
+                ),
+
+              const SizedBox(height: 20),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Debug Logs:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      final logs = _debugLogs.join('\n');
+                      Clipboard.setData(ClipboardData(text: logs));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Logs copied to clipboard'),
+                        ),
+                      );
+                    },
+                    child: const Text('Copy Logs'),
+                  ),
+                ],
+              ),
+              Container(),
+              Container(
+                height: 150,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                ),
+                child: ListView.builder(
+                  itemCount: _debugLogs.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      child: Text(
+                        _debugLogs[index],
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

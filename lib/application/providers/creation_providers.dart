@@ -49,8 +49,8 @@ class CreationNotifier extends _$CreationNotifier {
     final nfc = ref.read(nfcServiceProvider);
     state = state.copyWith(error: "タグをタッチしてください...");
 
-    // Make sure we are in idle/valid state
-    nfc.resetSession(onError: onError);
+    // Explicit scan handles this.
+    nfc.startSessionWithTimeout(onError: onError);
 
     try {
       final data = await nfc.backgroundTagStream.where((d) => d != null).first;
@@ -326,21 +326,17 @@ class CreationNotifier extends _$CreationNotifier {
                 handleWrite(true);
               } else if (writeState is NfcCapacityError) {
                 state = state.copyWith(error: writeState.message);
-                nfc.resetSession();
               } else if (writeState is NfcWriteError) {
                 state = state.copyWith(error: "書き込みエラー: ${writeState.message}");
-                nfc.resetSession();
               }
             },
             onError: (err) {
               state = state.copyWith(error: "NFCエラー: $err");
-              nfc.resetSession();
             },
             cancelOnError: true,
           );
         } catch (e) {
           state = state.copyWith(error: "開始エラー: $e");
-          nfc.resetSession();
         }
       }
 
@@ -356,8 +352,8 @@ class CreationNotifier extends _$CreationNotifier {
     // Reset success state
     state = state.copyWith(isSuccess: false, error: null);
 
-    // Close the write session and resume background listening
-    ref.read(nfcServiceProvider).resetSession();
+    // Close the write session implicitly or allow user to navigate away.
+    // ref.read(nfcServiceProvider).stopSession(); // Optional if we added it, but let's just not restart!
 
     // Go back to Home happens in UI
   }

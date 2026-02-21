@@ -128,7 +128,9 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
               instructionText: 'アプリが起動しました。\nデータを復号するために\nもう一度NFCタグをタッチしてください。',
               buttonText: '読み取り開始',
               onStartSession: (onError) {
-                ref.read(nfcServiceProvider).resetSession(onError: onError);
+                ref
+                    .read(nfcServiceProvider)
+                    .startSessionForIOS(onError: onError);
               },
             ),
           ],

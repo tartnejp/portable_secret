@@ -26,7 +26,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Force reset session to ensure we are listening fresh on Start/Rebuild
       if (defaultTargetPlatform != TargetPlatform.iOS) {
-        ref.read(nfcServiceProvider).resetSession();
+        ref.read(nfcServiceProvider).startSessionWithTimeout();
       }
     });
   }
@@ -64,7 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
         if (defaultTargetPlatform != TargetPlatform.iOS) {
-          ref.read(nfcServiceProvider).resetSession();
+          ref.read(nfcServiceProvider).startSessionWithTimeout();
         }
       }
     });
@@ -165,7 +165,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   setState(() {
                     _statusMessage = 'NFCタグをタッチしてください';
                   });
-                  ref.read(nfcServiceProvider).resetSession(onError: onError);
+                  ref
+                      .read(nfcServiceProvider)
+                      .startSessionForIOS(onError: onError);
                 },
               ),
             const SizedBox(height: 48),
