@@ -72,13 +72,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     if (mounted) {
       setState(() {
         _statusMessage = 'NFCタグをタッチしてください';
-        _isReading = false;
       });
     }
   }
 
   String _statusMessage = 'NFCタグをタッチしてください';
-  bool _isReading = false;
   bool _isResumed = true; // Tracks if this screen is currently top-most
 
   @override
@@ -88,7 +86,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       if (!_isResumed)
         return; // Ignore detections if we are not the active screen
 
-      setState(() => _isReading = false);
       final foundLockMethod = detection.foundLockMethod;
       final encryptedText = detection.encryptedText!;
 
@@ -130,20 +127,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
     // Listen for Generic/Unknown Detection (Update UI message)
     ref.listenNfcDetection<GenericNfcDetected>((detection) {
-      setState(() {
-        _statusMessage = '未登録、または不明なNFCタグです';
-        _isReading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _statusMessage = '未登録、または不明なNFCタグです';
+        });
+      }
       // Note: Overlay might be suppressed by NfcDetectionScope configuration for Home,
       // but this local state update ensures the UI text changes.
     });
 
     // Listen for Read Errors
     ref.listenNfcDetection<NfcError>((detection) {
-      setState(() {
-        _statusMessage = '読み取りエラー: 再度タッチしてください';
-        _isReading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _statusMessage = '読み取りエラー: 再度タッチしてください';
+        });
+      }
     });
 
     // Optional: Listen for URL Detection
@@ -155,21 +154,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           children: [
             const Icon(Icons.nfc, size: 80, color: Colors.blue),
             const SizedBox(height: 24),
-            if (_isReading)
-              const CircularProgressIndicator()
-            else
-              NfcSessionTriggerWidget(
-                instructionText: _statusMessage,
-                buttonText: '読み取り開始',
-                onStartSession: (onError) {
+            const SizedBox(height: 24),
+            NfcSessionTriggerWidget(
+              instructionText: _statusMessage,
+              buttonText: 'NFCタグの読み取りを開始',
+              onStartSession: (onError) {
+                if (mounted) {
                   setState(() {
                     _statusMessage = 'NFCタグをタッチしてください';
                   });
-                  ref
-                      .read(nfcServiceProvider)
-                      .startSessionForIOS(onError: onError);
-                },
-              ),
+                }
+                ref
+                    .read(nfcServiceProvider)
+                    .startSessionForIOS(onError: onError);
+              },
+            ),
             const SizedBox(height: 48),
             ElevatedButton.icon(
               onPressed: () async {

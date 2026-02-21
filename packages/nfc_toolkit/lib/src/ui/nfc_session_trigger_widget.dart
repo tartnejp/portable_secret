@@ -34,17 +34,12 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
 
 class _NfcSessionTriggerWidgetState
     extends ConsumerState<NfcSessionTriggerWidget> {
-  bool _isSessionActive = false;
   bool _hasAutoStarted = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     if (!_hasAutoStarted) {
       // On anything but iOS, auto-start immediately
       if (defaultTargetPlatform != TargetPlatform.iOS) {
@@ -64,9 +59,7 @@ class _NfcSessionTriggerWidgetState
 
       // Safety check to only reset UI state on iOS
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        setState(() {
-          _isSessionActive = false;
-        });
+        // No longer maintaining local spinner state on iOS
       }
 
       final messenger = ScaffoldMessenger.maybeOf(context);
@@ -89,10 +82,6 @@ class _NfcSessionTriggerWidgetState
   }
 
   void _triggerIosSession() {
-    setState(() {
-      _isSessionActive = true;
-    });
-
     // We notify the parent that the trigger happened
     if (widget.onStartSession != null) {
       widget.onStartSession!(_handleError);
@@ -107,9 +96,6 @@ class _NfcSessionTriggerWidgetState
     });
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      if (_isSessionActive) {
-        return const Center(child: CircularProgressIndicator());
-      }
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
