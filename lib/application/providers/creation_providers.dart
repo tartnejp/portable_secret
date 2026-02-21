@@ -301,14 +301,14 @@ class CreationNotifier extends _$CreationNotifier {
 
       final nfc = ref.read(nfcServiceProvider);
 
-      void handleWrite(bool allowOverwrite) async {
+      void handleWrite() async {
         try {
           final stream = await nfc.startWrite([
             NfcWriteDataUri(
               Uri.parse('https://static-site-wzq.pages.dev/unlock'),
             ),
             NfcWriteDataMime('application/portablesec', payloadBytes),
-          ], allowOverwrite: allowOverwrite);
+          ], allowOverwrite: true);
 
           stream.listen(
             (writeState) {
@@ -321,9 +321,6 @@ class CreationNotifier extends _$CreationNotifier {
 
                 // nfc.resetSession(); // DELAYED until finishWriting
                 state = state.copyWith(isSuccess: true, error: null);
-              } else if (writeState is NfcWriteOverwriteRequired) {
-                // Auto-confirm overwrite
-                handleWrite(true);
               } else if (writeState is NfcCapacityError) {
                 state = state.copyWith(error: writeState.message);
               } else if (writeState is NfcWriteError) {
@@ -340,7 +337,7 @@ class CreationNotifier extends _$CreationNotifier {
         }
       }
 
-      handleWrite(false);
+      handleWrite();
 
       state = state.copyWith(error: "タグをタッチしてください...");
     } catch (e) {

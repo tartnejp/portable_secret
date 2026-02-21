@@ -195,7 +195,12 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     Duration? timeout,
     VoidCallback? onTimeout,
     void Function(String)? onError,
-  }) {
+  }) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // Robust cleanup: ensure no native or Dart sessions are hanging before starting
+      await NfcManager.instance.stopSession().catchError((_) {});
+    }
+
     _sessionTimeout?.cancel();
 
     if (timeout != null) {
