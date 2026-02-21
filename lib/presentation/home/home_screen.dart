@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,7 +25,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     // Initialize the detection strategy for secrets
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Force reset session to ensure we are listening fresh on Start/Rebuild
-      ref.read(nfcServiceProvider).resetSession();
+      if (defaultTargetPlatform != TargetPlatform.iOS) {
+        ref.read(nfcServiceProvider).resetSession();
+      }
     });
   }
 
@@ -60,7 +63,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
-        ref.read(nfcServiceProvider).resetSession();
+        if (defaultTargetPlatform != TargetPlatform.iOS) {
+          ref.read(nfcServiceProvider).resetSession();
+        }
       }
     });
 

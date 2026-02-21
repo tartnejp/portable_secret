@@ -389,6 +389,11 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       await NfcManager.instance.stopSession().timeout(
         const Duration(milliseconds: 500),
       );
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await Future.delayed(
+          const Duration(milliseconds: 300),
+        ); // Delay for UI animation to clear
+      }
     } catch (_) {}
     _startNfcSession(
       onError: onError,
@@ -452,6 +457,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       await NfcManager.instance.stopSession().timeout(
         const Duration(milliseconds: 500),
       );
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
     } catch (_) {}
 
     _startNfcSession(
@@ -478,6 +486,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       await NfcManager.instance.stopSession().timeout(
         const Duration(milliseconds: 500),
       );
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
     } catch (_) {}
 
     _startNfcSession(
