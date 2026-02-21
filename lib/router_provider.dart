@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:flutter/material.dart';
 import 'package:portable_sec/presentation/home/home_screen.dart';
+import 'package:portable_sec/presentation/home/ios_test_screen.dart';
 import 'package:portable_sec/presentation/creation/steps/select_lock_type_page.dart';
 import 'package:portable_sec/presentation/creation/steps/capacity_check_page.dart';
 import 'package:portable_sec/presentation/creation/steps/input_data_page.dart';
@@ -44,8 +45,8 @@ enum AppRoute {
 List<RouteBase> get appRoutes => [
   GoRoute(
     path: '/',
-    name: AppRoute.home.name, // Home
-    builder: (context, state) => const HomeScreen(),
+    name: AppRoute.home.name, // Used for the test screen temporarily
+    builder: (context, state) => const IosTestScreen(),
   ),
   GoRoute(
     path: '/creation',
