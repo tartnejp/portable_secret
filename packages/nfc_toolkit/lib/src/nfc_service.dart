@@ -147,6 +147,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   NfcData? _initialTag;
   bool _initialTagConsumed = false;
   NfcData? _bufferedTag;
+  bool _isIosSessionActive = false;
 
   void _onBackgroundTagListen() {
     if (_bufferedTag != null) {
@@ -219,6 +220,10 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       });
     }
 
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      _isIosSessionActive = true;
+    }
+
     NfcManager.instance
         .startSession(
           pollingOptions: NfcPollingOption.values.toSet(),
@@ -231,6 +236,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           },
           onSessionErrorIos: (error) {
             _sessionTimeout?.cancel();
+            if (defaultTargetPlatform == TargetPlatform.iOS) {
+              _isIosSessionActive = false;
+            }
             final dynamic e = error;
             final String errorMsg = e.message.toString();
 
@@ -247,6 +255,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
         )
         .catchError((e) {
           _sessionTimeout?.cancel();
+          if (defaultTargetPlatform == TargetPlatform.iOS) {
+            _isIosSessionActive = false;
+          }
           // Push the raw error directly so the UI can log/copy it.
           final errorMsg = e.toString();
 
@@ -270,6 +281,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          _isIosSessionActive = false;
+        }
         NfcManager.instance.stopSession();
         break;
       case AppLifecycleState.resumed:
@@ -282,6 +296,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      _isIosSessionActive = false;
+    }
     NfcManager.instance.stopSession();
     _cleanupStream();
     _backgroundTagController.close();
@@ -386,13 +403,16 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     try {
       // Allow enough time for stopSession to complete on iOS,
       // as starting immediately after can cause "Multiple sessions cannot be active".
-      await NfcManager.instance.stopSession().timeout(
-        const Duration(milliseconds: 500),
-      );
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await Future.delayed(
-          const Duration(milliseconds: 300),
-        ); // Delay for UI animation to clear
+      if (defaultTargetPlatform != TargetPlatform.iOS || _isIosSessionActive) {
+        await NfcManager.instance.stopSession().timeout(
+          const Duration(milliseconds: 500),
+        );
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          _isIosSessionActive = false;
+          await Future.delayed(
+            const Duration(milliseconds: 300),
+          ); // Delay for UI animation to clear
+        }
       }
     } catch (_) {}
     _startNfcSession(
@@ -454,11 +474,14 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     }
 
     try {
-      await NfcManager.instance.stopSession().timeout(
-        const Duration(milliseconds: 500),
-      );
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await Future.delayed(const Duration(milliseconds: 300));
+      if (defaultTargetPlatform != TargetPlatform.iOS || _isIosSessionActive) {
+        await NfcManager.instance.stopSession().timeout(
+          const Duration(milliseconds: 500),
+        );
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          _isIosSessionActive = false;
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
       }
     } catch (_) {}
 
@@ -483,11 +506,14 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     _onTagDiscovered = _handleBackgroundTag;
 
     try {
-      await NfcManager.instance.stopSession().timeout(
-        const Duration(milliseconds: 500),
-      );
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await Future.delayed(const Duration(milliseconds: 300));
+      if (defaultTargetPlatform != TargetPlatform.iOS || _isIosSessionActive) {
+        await NfcManager.instance.stopSession().timeout(
+          const Duration(milliseconds: 500),
+        );
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          _isIosSessionActive = false;
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
       }
     } catch (_) {}
 
