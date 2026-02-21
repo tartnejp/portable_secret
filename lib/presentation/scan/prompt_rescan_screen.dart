@@ -127,8 +127,8 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
             NfcSessionTriggerWidget(
               instructionText: 'アプリが起動しました。\nデータを復号するために\nもう一度NFCタグをタッチしてください。',
               buttonText: '読み取り開始',
-              onStartSession: () {
-                ref.read(nfcServiceProvider).resetSession();
+              onStartSession: (onError) {
+                ref.read(nfcServiceProvider).resetSession(onError: onError);
               },
             ),
           ],

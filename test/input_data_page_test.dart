@@ -40,6 +40,7 @@ class MockNfcService implements NfcService {
   Future<Stream<NfcWriteState>> startWrite(
     List<NfcWriteData> dataList, {
     bool allowOverwrite = false,
+    void Function(String)? onError,
   }) async {
     return const Stream.empty();
   }

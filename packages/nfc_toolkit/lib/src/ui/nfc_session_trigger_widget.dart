@@ -16,8 +16,9 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
   /// The text to display on the button (iOS)
   final String buttonText;
 
-  /// The function to execute to initiate the NFC session (e.g., resetSession or startWrite)
-  final VoidCallback onStartSession;
+  /// The function to execute to initiate the NFC session (e.g., resetSession or startWrite).
+  /// It receives a callback to handle errors and timeouts, which it should pass to the underlying nfc_service.
+  final void Function(void Function(String) onError)? onStartSession;
 
   const NfcSessionTriggerWidget({
     super.key,
@@ -48,7 +49,9 @@ class _NfcSessionTriggerWidgetState
       // On anything but iOS, auto-start immediately
       if (defaultTargetPlatform != TargetPlatform.iOS) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) widget.onStartSession();
+          if (mounted && widget.onStartSession != null) {
+            widget.onStartSession!(_handleError);
+          }
         });
       }
       _hasAutoStarted = true;
@@ -91,25 +94,9 @@ class _NfcSessionTriggerWidgetState
     });
 
     // We notify the parent that the trigger happened
-    widget.onStartSession();
-
-    // Then explicitly start the session via toolkit for iOS with embedded callbacks.
-    ref
-        .read(nfcServiceProvider)
-        .startSessionForIOS(
-          alertMessage: widget.instructionText,
-          timeout: const Duration(seconds: 10),
-          onTimeout: () {
-            if (mounted) {
-              _handleError('タイムアウトしました');
-            }
-          },
-          onError: (msg) {
-            if (mounted) {
-              _handleError(msg);
-            }
-          },
-        );
+    if (widget.onStartSession != null) {
+      widget.onStartSession!(_handleError);
+    }
   }
 
   @override

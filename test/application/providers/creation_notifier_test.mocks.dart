@@ -65,12 +65,13 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
   _i4.Future<_i4.Stream<_i3.NfcWriteState>> startWrite(
     List<_i3.NfcWriteData>? dataList, {
     bool? allowOverwrite = false,
+    void Function(String)? onError,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
               #startWrite,
               [dataList],
-              {#allowOverwrite: allowOverwrite},
+              {#allowOverwrite: allowOverwrite, #onError: onError},
             ),
             returnValue: _i4.Future<_i4.Stream<_i3.NfcWriteState>>.value(
               _i4.Stream<_i3.NfcWriteState>.empty(),

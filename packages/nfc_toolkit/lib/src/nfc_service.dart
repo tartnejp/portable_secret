@@ -15,6 +15,7 @@ abstract class NfcService {
   Future<Stream<NfcWriteState>> startWrite(
     List<NfcWriteData> dataList, {
     bool allowOverwrite = false,
+    void Function(String)? onError,
   });
 
   Future<void> init();
@@ -375,6 +376,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   Future<Stream<NfcWriteState>> startWrite(
     List<NfcWriteData> dataList, {
     bool allowOverwrite = false,
+    void Function(String)? onError,
   }) async {
     _cleanupStream();
     _writeController = StreamController<NfcWriteState>();
@@ -382,11 +384,14 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       await _handleWriteTag(tag, dataList, allowOverwrite);
     };
     try {
+      // Allow enough time for stopSession to complete on iOS,
+      // as starting immediately after can cause "Multiple sessions cannot be active".
       await NfcManager.instance.stopSession().timeout(
-        const Duration(milliseconds: 200),
+        const Duration(milliseconds: 500),
       );
     } catch (_) {}
     _startNfcSession(
+      onError: onError,
       timeout: defaultTargetPlatform == TargetPlatform.iOS
           ? const Duration(seconds: 10)
           : null,
@@ -445,7 +450,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
     try {
       await NfcManager.instance.stopSession().timeout(
-        const Duration(milliseconds: 200),
+        const Duration(milliseconds: 500),
       );
     } catch (_) {}
 
@@ -471,7 +476,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
     try {
       await NfcManager.instance.stopSession().timeout(
-        const Duration(milliseconds: 200),
+        const Duration(milliseconds: 500),
       );
     } catch (_) {}
 

@@ -156,11 +156,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               NfcSessionTriggerWidget(
                 instructionText: _statusMessage,
                 buttonText: '読み取り開始',
-                onStartSession: () {
+                onStartSession: (onError) {
                   setState(() {
                     _statusMessage = 'NFCタグをタッチしてください';
                   });
-                  ref.read(nfcServiceProvider).resetSession();
+                  ref.read(nfcServiceProvider).resetSession(onError: onError);
                 },
               ),
             const SizedBox(height: 48),

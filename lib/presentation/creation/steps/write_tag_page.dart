@@ -54,8 +54,10 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
               NfcSessionTriggerWidget(
                 instructionText: "NFCカードをタッチしてください\n(書き込み待機中...)",
                 buttonText: "書き込み開始",
-                onStartSession: () {
-                  ref.read(creationProvider.notifier).writeToNfc();
+                onStartSession: (onError) {
+                  ref
+                      .read(creationProvider.notifier)
+                      .writeToNfc(onError: onError);
                 },
               ),
               if (state.error != null)

@@ -45,12 +45,12 @@ class CreationNotifier extends _$CreationNotifier {
 
   // ... (Capacity check methods) ...
   // ... (Capacity check methods) ...
-  Future<void> startCapacityScan() async {
+  Future<void> startCapacityScan({void Function(String)? onError}) async {
     final nfc = ref.read(nfcServiceProvider);
     state = state.copyWith(error: "タグをタッチしてください...");
 
     // Make sure we are in idle/valid state
-    nfc.resetSession();
+    nfc.resetSession(onError: onError);
 
     try {
       final data = await nfc.backgroundTagStream.where((d) => d != null).first;
@@ -245,7 +245,7 @@ class CreationNotifier extends _$CreationNotifier {
   }
 
   // --- Step 5: Write ---
-  Future<void> writeToNfc() async {
+  Future<void> writeToNfc({void Function(String)? onError}) async {
     String verificationHash = state.lockInput;
     if (state.selectedType == LockType.patternAndPin) {
       // Combine [Pattern]:[PIN]

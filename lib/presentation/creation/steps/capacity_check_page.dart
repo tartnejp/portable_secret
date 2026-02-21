@@ -64,8 +64,10 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
               NfcSessionTriggerWidget(
                 instructionText: "NFCカードをタッチしてください\n書き込み可能なデータサイズを計測します",
                 buttonText: '計測開始',
-                onStartSession: () {
-                  ref.read(creationProvider.notifier).startCapacityScan();
+                onStartSession: (onError) {
+                  ref
+                      .read(creationProvider.notifier)
+                      .startCapacityScan(onError: onError);
                 },
               ),
               const SizedBox(height: 48),
