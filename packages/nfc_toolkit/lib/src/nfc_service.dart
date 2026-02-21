@@ -232,18 +232,25 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
               }
               // Successfully processed (or gracefully handled), close the session on iOS
               if (defaultTargetPlatform == TargetPlatform.iOS) {
-                await NfcManager.instance.stopSession();
+                await NfcManager.instance
+                    .stopSession(alertMessageIos: '完了しました')
+                    .catchError((_) {});
               }
             } catch (e) {
               if (defaultTargetPlatform == TargetPlatform.iOS) {
-                await NfcManager.instance.stopSession(
-                  errorMessageIos: 'エラーが発生しました: $e',
+                final String userMsg = e.toString().replaceFirst(
+                  'Exception: ',
+                  '',
                 );
+                await NfcManager.instance.stopSession(errorMessageIos: userMsg);
               }
             }
           },
-          onSessionErrorIos: (error) {
+          onSessionErrorIos: (error) async {
             _sessionTimeout?.cancel();
+
+            // Force the plugin to clear its internal session state
+            await NfcManager.instance.stopSession().catchError((_) {});
 
             // Suppress the "User Canceled" error so it doesn't show as a red SnackBar
             if (error.code ==
@@ -266,8 +273,10 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
             }
           },
         )
-        .catchError((e) {
+        .catchError((e) async {
           _sessionTimeout?.cancel();
+          await NfcManager.instance.stopSession().catchError((_) {});
+
           // Push the raw error directly so the UI can log/copy it.
           final errorMsg = e.toString();
 
@@ -406,9 +415,10 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     };
     // Stop session before start is removed to prevent iOS crash
     _startNfcSession(
+      alertMessage: 'NFCタグをタッチして書き込みます',
       onError: onError,
       timeout: defaultTargetPlatform == TargetPlatform.iOS
-          ? const Duration(seconds: 10)
+          ? const Duration(seconds: 15)
           : null,
     );
     _writeController!.add(NfcWriteLoading());
@@ -423,8 +433,8 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     if (_writeController == null) return;
     try {
       final ndef = Ndef.from(tag);
-      if (ndef == null) throw Exception('Tag is not NDEF compatible');
-      if (!ndef.isWritable) throw Exception('Tag is not writable');
+      if (ndef == null) throw Exception('NFCタグが書き込み非対応です');
+      if (!ndef.isWritable) throw Exception('このタグは書き込み不可です');
 
       final nfcData = NfcData(tag);
       final currentMessage = await nfcData.getOrReadMessage();
@@ -432,7 +442,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           currentMessage != null &&
           currentMessage.records.isNotEmpty) {
         _writeController!.add(NfcWriteOverwriteRequired());
-        return;
+        throw Exception('上書きが無効化されています');
       }
       final records = targetData.map(_createRecord).toList();
       final message = NdefMessage(records: records);
@@ -440,12 +450,20 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
         _writeController!.add(
           NfcCapacityError(message.byteLength, ndef.maxSize),
         );
-        return;
+        throw Exception('容量が不足しています');
       }
       await ndef.write(message: message);
+
+      // On iOS, waiting slightly ensures the hardware buffer flushes before returning
+      // and causing stopSession to trigger prematurely.
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
       _writeController!.add(NfcWriteSuccess());
     } catch (e) {
       _writeController!.add(NfcWriteError(e.toString()));
+      rethrow; // Propagate to native iOS sheet handler logic
     }
   }
 
