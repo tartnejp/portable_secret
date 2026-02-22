@@ -138,6 +138,8 @@ extension NfcDetectionRefExtension on Ref {
                 await read(
                   nfcServiceProvider,
                 ).stopSession(errorMessage: e.toString());
+              } finally {
+                controller.releaseOwnership();
               }
             });
           }
@@ -192,6 +194,8 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
                 await read(
                   nfcServiceProvider,
                 ).stopSession(errorMessage: e.toString());
+              } finally {
+                controller.releaseOwnership();
               }
             });
           }

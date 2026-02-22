@@ -64,7 +64,7 @@ class NfcSessionController extends Notifier<NfcSessionState> {
       return true;
     }
     // Already claimed.
-    return true;
+    return false;
   }
 
   /// Resets the session back to idle.
