@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart'; // Added for WidgetsBinding
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod/riverpod.dart';
 import '../core/nfc_detection.dart';
 import '../nfc_service.dart';
 import '../nfc_data.dart'; // Add for NfcError
+import 'nfc_session.dart';
 
 import '../providers/nfc_detection_registry.dart';
 import '../riverpod/nfc_providers.dart';
@@ -96,15 +95,12 @@ extension NfcDetectionRefExtension on Ref {
   /// Listens for a specific [NfcDetection] type and triggers [onData] when it occurs.
   ///
   /// This is a typesafe wrapper around `ref.listen`.
+  /// The provided callback MUST return a `Future<NfcSessionAction>`.
   ///
-  /// Example:
-  /// ```dart
-  /// ref.listenNfcDetection<SecretDetection>((detection) {
-  ///   // Do something with detection.secretData
-  /// });
-  /// ```
+  /// During execution, the session is claimed to prevent generic fallbacks.
+  /// Once the Future completes, the underlying session is closed with the specified action result.
   void listenNfcDetection<T extends NfcDetection>(
-    void Function(T detection) onData, {
+    Future<NfcSessionAction> Function(T detection) onData, {
     void Function(Object error, StackTrace stackTrace)? onError,
   }) {
     listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
@@ -114,8 +110,35 @@ extension NfcDetectionRefExtension on Ref {
       next.when(
         data: (detection) {
           if (detection is T) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              onData(detection);
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              final controller = read(nfcSessionControllerProvider.notifier);
+              if (!controller.takeOwnership()) return;
+
+              try {
+                final action = await onData(detection);
+
+                final nfcService = read(nfcServiceProvider);
+                if (action.isSuccess) {
+                  await nfcService.stopSession(
+                    alertMessage: action.message ?? '完了しました',
+                  );
+                  // TODO: Trigger Android success overlay
+                } else if (action.isNone) {
+                  await nfcService.stopSession();
+                } else {
+                  await nfcService.stopSession(
+                    errorMessage: action.message ?? 'エラーが発生しました',
+                  );
+                  // TODO: Trigger Android error overlay
+                }
+              } catch (e, stackTrace) {
+                if (onError != null) {
+                  onError(e, stackTrace);
+                }
+                await read(
+                  nfcServiceProvider,
+                ).stopSession(errorMessage: e.toString());
+              }
             });
           }
         },
@@ -123,7 +146,6 @@ extension NfcDetectionRefExtension on Ref {
             onError ??
             (error, stack) {
               // debugPrint('NfcDetection error: $error');
-              // Only report if relevant? Or generic listener handles it.
             },
         loading: () {},
       );
@@ -134,7 +156,7 @@ extension NfcDetectionRefExtension on Ref {
 // Compatibility for WidgetRef
 extension NfcDetectionWidgetRefExtension on WidgetRef {
   void listenNfcDetection<T extends NfcDetection>(
-    void Function(T detection) onData, {
+    Future<NfcSessionAction> Function(T detection) onData, {
     void Function(Object error, StackTrace stackTrace)? onError,
   }) {
     listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
@@ -144,8 +166,33 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
       next.when(
         data: (detection) {
           if (detection is T) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              onData(detection);
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              final controller = read(nfcSessionControllerProvider.notifier);
+              if (!controller.takeOwnership()) return;
+
+              try {
+                final action = await onData(detection);
+
+                final nfcService = read(nfcServiceProvider);
+                if (action.isSuccess) {
+                  await nfcService.stopSession(
+                    alertMessage: action.message ?? '完了しました',
+                  );
+                } else if (action.isNone) {
+                  await nfcService.stopSession();
+                } else {
+                  await nfcService.stopSession(
+                    errorMessage: action.message ?? 'エラーが発生しました',
+                  );
+                }
+              } catch (e, stackTrace) {
+                if (onError != null) {
+                  onError(e, stackTrace);
+                }
+                await read(
+                  nfcServiceProvider,
+                ).stopSession(errorMessage: e.toString());
+              }
             });
           }
         },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/nfc_detection.dart';
 import '../state/nfc_detection_provider.dart';
+import '../state/nfc_session.dart';
 
 /// A wrapper widget that listens to [NfcDetectionStreamProvider] and displays
 /// overlay messages for detected tags.
@@ -60,7 +61,20 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
       final message = detection.overlayMessage;
       final currentRoute = _getCurrentRoute(context);
 
-      // 1. Generic Suppression (Legacy/Simple)
+      // 1. Session Ownership Suppression (Global)
+      // If the session has been claimed (e.g. by another screen processing a Secret),
+      // we suppress Generic fallbacks entirely to avoid interfering with their custom sheet closure.
+      if (detection is GenericNfcDetected) {
+        final sessionState = ref.read(nfcSessionControllerProvider);
+        if (sessionState == NfcSessionState.claimed) {
+          debugPrint(
+            "NfcDetectionScope: Suppressing GenericNfcDetected because session is Claimed",
+          );
+          return;
+        }
+      }
+
+      // 2. Generic Suppression (Legacy/Simple)
       if (detection is GenericNfcDetected) {
         if (currentRoute != null &&
             widget.disableGenericDetectionRoutes.contains(currentRoute)) {
@@ -68,7 +82,7 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
         }
       }
 
-      // 2. Type-based Suppression
+      // 3. Type-based Suppression
       if (currentRoute != null &&
           widget.routeDetectionSuppressions.containsKey(currentRoute)) {
         final suppressedTypes =

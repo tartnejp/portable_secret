@@ -50,7 +50,7 @@ class CreationNotifier extends _$CreationNotifier {
     state = state.copyWith(error: "タグをタッチしてください...");
 
     // Explicit scan handles this.
-    nfc.startSessionWithTimeout(onError: onError);
+    nfc.startSession();
 
     try {
       final data = await nfc.backgroundTagStream.where((d) => d != null).first;

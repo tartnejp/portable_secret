@@ -26,7 +26,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Force reset session to ensure we are listening fresh on Start/Rebuild
       if (defaultTargetPlatform != TargetPlatform.iOS) {
-        ref.read(nfcServiceProvider).startSessionWithTimeout();
+        ref.read(nfcServiceProvider).startSession();
       }
     });
   }
@@ -64,7 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
         if (defaultTargetPlatform != TargetPlatform.iOS) {
-          ref.read(nfcServiceProvider).startSessionWithTimeout();
+          ref.read(nfcServiceProvider).startSession();
         }
       }
     });
@@ -82,9 +82,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     // Listen for Secret Detection
-    ref.listenNfcDetection<SecretDetection>((detection) {
+    ref.listenNfcDetection<SecretDetection>((detection) async {
       if (!_isResumed)
-        return; // Ignore detections if we are not the active screen
+        return NfcSessionAction.none(); // Ignore detections if we are not the active screen
 
       final foundLockMethod = detection.foundLockMethod;
       final encryptedText = detection.encryptedText!;
@@ -123,26 +123,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           },
         );
       }
+      return NfcSessionAction.success(message: 'ロック解除画面へ移動します');
     });
 
     // Listen for Generic/Unknown Detection (Update UI message)
-    ref.listenNfcDetection<GenericNfcDetected>((detection) {
+    ref.listenNfcDetection<GenericNfcDetected>((detection) async {
       if (mounted) {
         setState(() {
           _statusMessage = '未登録、または不明なNFCタグです';
         });
       }
-      // Note: Overlay might be suppressed by NfcDetectionScope configuration for Home,
-      // but this local state update ensures the UI text changes.
+      return NfcSessionAction.error(message: '未登録のNFCタグです');
     });
 
     // Listen for Read Errors
-    ref.listenNfcDetection<NfcError>((detection) {
+    ref.listenNfcDetection<NfcError>((detection) async {
       if (mounted) {
         setState(() {
           _statusMessage = '読み取りエラー: 再度タッチしてください';
         });
       }
+      return NfcSessionAction.error(message: '読み取りエラーが発生しました');
     });
 
     // Optional: Listen for URL Detection
@@ -164,9 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                     _statusMessage = 'NFCタグをタッチしてください';
                   });
                 }
-                ref
-                    .read(nfcServiceProvider)
-                    .startSessionForIOS(onError: onError);
+                ref.read(nfcServiceProvider).startSession();
               },
             ),
             const SizedBox(height: 48),

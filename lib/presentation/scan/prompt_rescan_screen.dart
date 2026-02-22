@@ -49,8 +49,8 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
   @override
   Widget build(BuildContext context) {
     // Listen for Secret Detection
-    ref.listenNfcDetection<SecretDetection>((detection) {
-      if (!_isResumed) return;
+    ref.listenNfcDetection<SecretDetection>((detection) async {
+      if (!_isResumed) return NfcSessionAction.none();
 
       final foundLockMethod = detection.foundLockMethod;
       final encryptedText = detection.encryptedText!;
@@ -89,25 +89,28 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
           },
         );
       }
+      return NfcSessionAction.success(message: 'ロック解除画面へ移動します');
     });
 
     // Listen for Generic/Unknown Detection
-    ref.listenNfcDetection<GenericNfcDetected>((detection) {
+    ref.listenNfcDetection<GenericNfcDetected>((detection) async {
       // Show failure snackbar, tell them to tap again
       if (mounted && _isResumed) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('未対応のタグです。もう一度正しいタグをタッチしてください。')),
         );
       }
+      return NfcSessionAction.error(message: '未登録のNFCタグです');
     });
 
     // Listen for Read Errors
-    ref.listenNfcDetection<NfcError>((detection) {
+    ref.listenNfcDetection<NfcError>((detection) async {
       if (mounted && _isResumed) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('読み取りエラー。もう一度タッチしてください。')));
       }
+      return NfcSessionAction.error(message: '読み取りエラーが発生しました');
     });
 
     return Scaffold(
@@ -128,9 +131,7 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
               instructionText: 'アプリが起動しました。\nデータを復号するために\nもう一度NFCタグをタッチしてください。',
               buttonText: 'NFCタグの読み取りを開始',
               onStartSession: (onError) {
-                ref
-                    .read(nfcServiceProvider)
-                    .startSessionForIOS(onError: onError);
+                ref.read(nfcServiceProvider).startSession();
               },
             ),
           ],

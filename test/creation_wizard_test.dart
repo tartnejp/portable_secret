@@ -44,12 +44,13 @@ class MockNfcService implements NfcService {
   void resetSession({String? alertMessage, void Function(String)? onError}) {}
 
   @override
-  void startSessionWithTimeout({
+  void startSession({List<String>? pathPattern}) {}
+
+  @override
+  Future<void> stopSession({
     String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) {}
+    String? errorMessage,
+  }) async {}
 
   @override
   void startSessionForIOS({

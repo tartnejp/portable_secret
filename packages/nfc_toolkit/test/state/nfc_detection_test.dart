@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,27 +40,15 @@ class MockNfcService implements NfcService {
   @override
   Future<void> init() async {}
 
-  @override
-  void resetSession({String? alertMessage, void Function(String)? onError}) {}
-
-  @override
-  void startSessionWithTimeout({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) {}
-
-  @override
-  void startSessionForIOS({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) {}
-
   Future<void> startSession({List<String>? pathPattern}) async {}
-  Future<void> stopSession() async {}
+
+  @override
+  Future<void> stopSession({
+    String? alertMessage,
+    String? errorMessage,
+  }) async {}
+
+  @override
   Future<bool> isAvailable() async => true;
   Future<NdefMessage?> readNDEF() async => null;
   Future<void> writeNDEF(NdefMessage message, {bool lock = false}) async {}

@@ -21,23 +21,13 @@ abstract class NfcService {
 
   Future<void> init();
 
-  /// Starts a session with an explicit timeout and callbacks.
+  /// Starts a session without a custom App-level timeout (relies on iOS 60s native timeout).
   /// Used primarily for controlled explicit scans on iOS, or timed scans on Android.
-  void startSessionWithTimeout({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  });
+  void startSession({List<String>? pathPattern});
 
-  /// Explicitly starts an iOS scan session.
-  /// This is a convenience wrapper around [startSessionWithTimeout] with default iOS behavior.
-  void startSessionForIOS({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  });
+  /// Explicitly stops the iOS scan session.
+  /// Used by NfcSessionController / Action extensions to close the session with a specific message.
+  Future<void> stopSession({String? alertMessage, String? errorMessage});
 
   /// Stream of tags detected while not in explicit scan/write mode
   Stream<NfcData?> get backgroundTagStream;
@@ -144,8 +134,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   NfcData? _initialTag;
   bool _initialTagConsumed = false;
   NfcData? _bufferedTag;
-  bool _isIosSessionActive =
-      false; // Intentionally left but unused, or simply removed
 
   void _onBackgroundTagListen() {
     if (_bufferedTag != null) {
@@ -156,7 +144,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   // Dynamic tag handler strategy
   Future<void> Function(NfcTag)? _onTagDiscovered;
-  Timer? _sessionTimeout;
 
   @override
   Stream<NfcData?> get backgroundTagStream => _backgroundTagController.stream;
@@ -192,32 +179,8 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   void _startNfcSession({
     String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
     void Function(String)? onError,
   }) {
-    _sessionTimeout?.cancel();
-
-    if (timeout != null) {
-      _sessionTimeout = Timer(timeout, () {
-        NfcManager.instance
-            .stopSession(errorMessageIos: 'タイムアウトしました')
-            .catchError((_) {});
-
-        // Native OS closed, trigger callback if provided
-        if (onTimeout != null) {
-          onTimeout();
-        }
-
-        final errorMsg = 'タイムアウトしました';
-        if (_writeController != null && !_writeController!.isClosed) {
-          _writeController!.add(NfcWriteError(errorMsg));
-        } else if (_errorController.hasListener) {
-          _errorController.add(NfcError(message: errorMsg));
-        }
-      });
-    }
-
     NfcManager.instance
         .startSession(
           pollingOptions: defaultTargetPlatform == TargetPlatform.iOS
@@ -225,17 +188,13 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
               : NfcPollingOption.values.toSet(),
           alertMessageIos: alertMessage ?? 'スキャンの準備ができました',
           onDiscovered: (tag) async {
-            _sessionTimeout?.cancel();
             try {
               if (_onTagDiscovered != null) {
                 await _onTagDiscovered!(tag);
               }
-              // Successfully processed (or gracefully handled), close the session on iOS
-              if (defaultTargetPlatform == TargetPlatform.iOS) {
-                await NfcManager.instance
-                    .stopSession(alertMessageIos: '完了しました')
-                    .catchError((_) {});
-              }
+              // WARNING: We NO LONGER call `stopSession()` here immediately.
+              // Tag logic (NfcDetection) will be evaluated, and UI can take ownership.
+              // The Session Ownership logic will handle closing the iOS sheet.
             } catch (e) {
               if (defaultTargetPlatform == TargetPlatform.iOS) {
                 final String userMsg = e.toString().replaceFirst(
@@ -247,8 +206,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
             }
           },
           onSessionErrorIos: (error) async {
-            _sessionTimeout?.cancel();
-
             // Force the plugin to clear its internal session state
             await NfcManager.instance.stopSession().catchError((_) {});
 
@@ -274,7 +231,6 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           },
         )
         .catchError((e) async {
-          _sessionTimeout?.cancel();
           await NfcManager.instance.stopSession().catchError((_) {});
 
           // Push the raw error directly so the UI can log/copy it.
@@ -294,8 +250,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (defaultTargetPlatform == TargetPlatform.iOS)
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
       return; // Prevent auto-start on resume for iOS
+    }
 
     switch (state) {
       case AppLifecycleState.paused:
@@ -414,13 +371,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
       await _handleWriteTag(tag, dataList, allowOverwrite);
     };
     // Stop session before start is removed to prevent iOS crash
-    _startNfcSession(
-      alertMessage: 'NFCタグをタッチして書き込みます',
-      onError: onError,
-      timeout: defaultTargetPlatform == TargetPlatform.iOS
-          ? const Duration(seconds: 15)
-          : null,
-    );
+    _startNfcSession(alertMessage: 'NFCタグをタッチして書き込みます', onError: onError);
     _writeController!.add(NfcWriteLoading());
     return _writeController!.stream;
   }
@@ -468,43 +419,23 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   }
 
   @override
-  void startSessionWithTimeout({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) async {
+  void startSession({List<String>? pathPattern}) async {
     _cleanupStream();
-    _sessionTimeout?.cancel();
     _onTagDiscovered = _handleBackgroundTag;
 
-    // Stop session before start is removed to prevent iOS crash
-
-    _startNfcSession(
-      alertMessage: alertMessage,
-      timeout: timeout,
-      onTimeout: onTimeout,
-      onError: onError,
-    );
+    _startNfcSession(alertMessage: 'スキャンする準備ができました');
   }
 
   @override
-  void startSessionForIOS({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) {
-    if (defaultTargetPlatform != TargetPlatform.iOS) {
-      return;
-    }
+  Future<void> stopSession({String? alertMessage, String? errorMessage}) async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
 
-    startSessionWithTimeout(
-      alertMessage: alertMessage,
-      timeout: timeout ?? const Duration(seconds: 10),
-      onTimeout: onTimeout,
-      onError: onError,
-    );
+    await NfcManager.instance
+        .stopSession(
+          alertMessageIos: alertMessage,
+          errorMessageIos: errorMessage,
+        )
+        .catchError((_) {});
   }
 
   void _cleanupStream() {
