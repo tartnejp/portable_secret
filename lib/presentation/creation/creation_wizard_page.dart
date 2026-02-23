@@ -126,41 +126,31 @@ class _MethodSelectionStep extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // ignore: deprecated_member_use
-        RadioListTile<LockType>(
-          title: const Text("パターン"),
-          value: LockType.pattern,
+        RadioGroup<LockType>(
           groupValue: state.selectedType,
           onChanged: (v) {
             if (v != null) notifier.selectMethod(v);
           },
-        ),
-        // ignore: deprecated_member_use
-        RadioListTile<LockType>(
-          title: const Text("PIN (数字のみ)"),
-          value: LockType.pin,
-          groupValue: state.selectedType,
-          onChanged: (v) {
-            if (v != null) notifier.selectMethod(v);
-          },
-        ),
-        // ignore: deprecated_member_use
-        RadioListTile<LockType>(
-          title: const Text("パターン + PIN"),
-          value: LockType.patternAndPin,
-          groupValue: state.selectedType,
-          onChanged: (v) {
-            if (v != null) notifier.selectMethod(v);
-          },
-        ),
-        // ignore: deprecated_member_use
-        RadioListTile<LockType>(
-          title: const Text("パスワード (文字と数字)"),
-          value: LockType.password,
-          groupValue: state.selectedType,
-          onChanged: (v) {
-            if (v != null) notifier.selectMethod(v);
-          },
+          child: Column(
+            children: [
+              RadioListTile<LockType>(
+                title: const Text("パターン"),
+                value: LockType.pattern,
+              ),
+              RadioListTile<LockType>(
+                title: const Text("PIN (数字のみ)"),
+                value: LockType.pin,
+              ),
+              RadioListTile<LockType>(
+                title: const Text("パターン + PIN"),
+                value: LockType.patternAndPin,
+              ),
+              RadioListTile<LockType>(
+                title: const Text("パスワード (文字と数字)"),
+                value: LockType.password,
+              ),
+            ],
+          ),
         ),
 
         const Spacer(),
@@ -426,25 +416,25 @@ class _InputDataStepState extends State<_InputDataStep> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        // ignore: deprecated_member_use
-        RadioListTile<bool>(
-          title: const Text("解除方式も選択を必須とする（安全）"),
-          value: true,
+        RadioGroup<bool>(
           groupValue: widget.state.isManualUnlockRequired,
           onChanged: (val) {
             if (val != null) widget.notifier.updateUnlockPreference(val);
           },
-          dense: true,
-        ),
-        // ignore: deprecated_member_use
-        RadioListTile<bool>(
-          title: const Text("解除方式を自動判別して選択不要とする"),
-          value: false,
-          groupValue: widget.state.isManualUnlockRequired,
-          onChanged: (val) {
-            if (val != null) widget.notifier.updateUnlockPreference(val);
-          },
-          dense: true,
+          child: Column(
+            children: [
+              RadioListTile<bool>(
+                title: const Text("解除方式も選択を必須とする（安全）"),
+                value: true,
+                dense: true,
+              ),
+              RadioListTile<bool>(
+                title: const Text("解除方式を自動判別して選択不要とする"),
+                value: false,
+                dense: true,
+              ),
+            ],
+          ),
         ),
         const Divider(),
         const SizedBox(height: 8),

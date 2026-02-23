@@ -45,15 +45,11 @@ class MockNfcService implements NfcService {
   @override
   Future<void> startSession({List<String>? pathPattern}) async {}
 
+  @override
   Future<void> stopSession({
     String? alertMessage,
     String? errorMessage,
   }) async {}
-
-  @override
-  Future<bool> isAvailable() async => true;
-  Future<NdefMessage?> readNDEF() async => null;
-  Future<void> writeNDEF(NdefMessage message, {bool lock = false}) async {}
 
   @override
   Future<Stream<NfcWriteState>> startWrite(

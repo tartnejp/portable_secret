@@ -232,25 +232,25 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<bool>(
-              title: const Text("解除方式も選択を必須とする（安全）"),
-              value: true,
+            RadioGroup<bool>(
               groupValue: state.isManualUnlockRequired,
               onChanged: (val) {
                 if (val != null) notifier.updateUnlockPreference(val);
               },
-              dense: true,
-            ),
-            // ignore: deprecated_member_use
-            RadioListTile<bool>(
-              title: const Text("解除方式を自動判別して選択不要とする"),
-              value: false,
-              groupValue: state.isManualUnlockRequired,
-              onChanged: (val) {
-                if (val != null) notifier.updateUnlockPreference(val);
-              },
-              dense: true,
+              child: Column(
+                children: [
+                  RadioListTile<bool>(
+                    title: const Text("解除方式も選択を必須とする（安全）"),
+                    value: true,
+                    dense: true,
+                  ),
+                  RadioListTile<bool>(
+                    title: const Text("解除方式を自動判別して選択不要とする"),
+                    value: false,
+                    dense: true,
+                  ),
+                ],
+              ),
             ),
             const Divider(),
             const SizedBox(height: 8),

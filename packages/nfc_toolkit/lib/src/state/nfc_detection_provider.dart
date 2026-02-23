@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart'; // Added for WidgetsBinding
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/nfc_detection.dart';
 import '../nfc_service.dart';
@@ -112,7 +112,7 @@ extension NfcDetectionRefExtension on Ref {
       next.when(
         data: (detection) {
           if (detection is T) {
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
+            Future.microtask(() async {
               final controller = read(nfcSessionControllerProvider.notifier);
               if (!controller.takeOwnership()) return;
 
@@ -173,7 +173,7 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
       next.when(
         data: (detection) {
           if (detection is T) {
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
+            Future.microtask(() async {
               final controller = read(nfcSessionControllerProvider.notifier);
               if (!controller.takeOwnership()) return;
 
