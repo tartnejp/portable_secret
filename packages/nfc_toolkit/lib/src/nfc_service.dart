@@ -35,6 +35,9 @@ abstract class NfcService {
   /// Stream of raw NFC errors caught during sessions (e.g., user canceled)
   Stream<NfcError> get errorStream;
 
+  /// Logger for debugging internal NFC events
+  void Function(String)? debugLogger;
+
   /// Retrieves the tag data that triggered the app launch, if any.
   /// This should be consumed once.
   Future<NfcData?> getInitialTag();
@@ -131,6 +134,9 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   StreamController<NfcWriteState>? _writeController;
   late final StreamController<NfcData?> _backgroundTagController;
   late final StreamController<NfcError> _errorController;
+  @override
+  void Function(String)? debugLogger;
+
   NfcData? _initialTag;
   bool _initialTagConsumed = false;
   NfcData? _bufferedTag;
@@ -186,14 +192,14 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           pollingOptions: NfcPollingOption.values.toSet(),
           alertMessageIos: alertMessage ?? 'スキャンの準備ができました',
           onDiscovered: (tag) async {
+            debugLogger?.call('onDiscovered native start');
             try {
               if (_onTagDiscovered != null) {
                 await _onTagDiscovered!(tag);
               }
-              // WARNING: We NO LONGER call `stopSession()` here immediately.
-              // Tag logic (NfcDetection) will be evaluated, and UI can take ownership.
-              // The Session Ownership logic will handle closing the iOS sheet.
+              debugLogger?.call('onDiscovered native end');
             } catch (e) {
+              debugLogger?.call('onDiscovered exception: $e');
               if (defaultTargetPlatform == TargetPlatform.iOS) {
                 final String userMsg = e.toString().replaceFirst(
                   'Exception: ',
@@ -274,26 +280,35 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   }
 
   Future<void> _handleBackgroundTag(NfcTag tag) async {
+    debugLogger?.call('_handleBackgroundTag entry');
     try {
       final data = NfcData(tag);
-      // Eagerly read NDEF message while the tag is still connected.
-      // On iOS, the tag connection may be lost after onDiscovered returns,
-      // so we must read here. The result is cached in NfcData for later use.
+      debugLogger?.call('eager read starting');
       try {
         await data.getOrReadMessage().timeout(
           const Duration(seconds: 3),
           onTimeout: () => null,
         );
-      } catch (_) {
-        // Read failed or timed out — proceed with whatever we have
+      } catch (e) {
+        debugLogger?.call('eager read error: $e');
       }
-      if (_backgroundTagController.hasListener) {
+      debugLogger?.call(
+        'eager read finished. cachedMessage=${data.cachedMessage != null}',
+      );
+
+      final hasListener = _backgroundTagController.hasListener;
+      debugLogger?.call('controller.hasListener=$hasListener');
+
+      if (hasListener) {
+        debugLogger?.call('adding to controller');
         _backgroundTagController.add(data);
+        debugLogger?.call('added to controller');
       } else {
+        debugLogger?.call('buffering tag (no listener)');
         _bufferedTag = data;
       }
     } catch (e) {
-      // Ignored
+      debugLogger?.call('_handleBackgroundTag fatal error: $e');
     }
   }
 
@@ -437,14 +452,23 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
 
   @override
   Future<void> stopSession({String? alertMessage, String? errorMessage}) async {
-    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+    debugLogger?.call(
+      'stopSession called (alert=$alertMessage, error=$errorMessage)',
+    );
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      debugLogger?.call('stopSession skipped (not iOS)');
+      return;
+    }
 
-    await NfcManager.instance
-        .stopSession(
-          alertMessageIos: alertMessage,
-          errorMessageIos: errorMessage,
-        )
-        .catchError((_) {});
+    try {
+      await NfcManager.instance.stopSession(
+        alertMessageIos: alertMessage,
+        errorMessageIos: errorMessage,
+      );
+      debugLogger?.call('stopSession native completed');
+    } catch (e) {
+      debugLogger?.call('stopSession native error: $e');
+    }
   }
 
   void _cleanupStream() {

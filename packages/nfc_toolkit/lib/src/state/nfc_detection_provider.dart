@@ -25,6 +25,11 @@ final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
       final nfcService = ref.watch(nfcServiceProvider);
       final interestRegistry = ref.read(nfcInterestRegistryProvider.notifier);
 
+      // Set internal logger for debugging
+      nfcService.debugLogger = (msg) {
+        ref.read(nfcDebugLogProvider.notifier).add('[SVC] $msg');
+      };
+
       // Check for initial tag (App Launch)
       final initialTag = await nfcService.getInitialTag();
 

@@ -10,15 +10,12 @@ import 'package:portable_sec/presentation/creation/steps/input_data_page.dart';
 // Minimal Mock NFC Service
 class MockNfcService implements NfcService {
   @override
-  Stream<NfcData> get backgroundTagStream => const Stream.empty();
+  Stream<NfcData?> get backgroundTagStream => const Stream.empty();
   @override
   Stream<NfcError> get errorStream => const Stream.empty();
 
   @override
   Future<void> init() async {}
-
-  @override
-  void resetSession({String? alertMessage, void Function(String)? onError}) {}
 
   @override
   void startSession({List<String>? pathPattern}) {}
@@ -30,12 +27,7 @@ class MockNfcService implements NfcService {
   }) async {}
 
   @override
-  void startSessionForIOS({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) {}
+  void Function(String)? debugLogger;
 
   @override
   Future<Stream<NfcWriteState>> startWrite(

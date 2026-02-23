@@ -16,7 +16,7 @@ import 'package:portable_sec/application/providers/initialization_provider.dart'
 
 // Mock NfcService
 class MockNfcService implements NfcService {
-  final _backgroundTagController = StreamController<NfcData>.broadcast();
+  final _backgroundTagController = StreamController<NfcData?>.broadcast();
   final _writeStateController = StreamController<NfcWriteState>.broadcast();
 
   void emitTag(NfcData data) {
@@ -32,16 +32,13 @@ class MockNfcService implements NfcService {
   }
 
   @override
-  Stream<NfcData> get backgroundTagStream => _backgroundTagController.stream;
+  Stream<NfcData?> get backgroundTagStream => _backgroundTagController.stream;
 
   @override
   Stream<NfcError> get errorStream => const Stream.empty();
 
   @override
   Future<void> init() async {}
-
-  @override
-  void resetSession({String? alertMessage, void Function(String)? onError}) {}
 
   @override
   void startSession({List<String>? pathPattern}) {}
@@ -53,12 +50,7 @@ class MockNfcService implements NfcService {
   }) async {}
 
   @override
-  void startSessionForIOS({
-    String? alertMessage,
-    Duration? timeout,
-    VoidCallback? onTimeout,
-    void Function(String)? onError,
-  }) {}
+  void Function(String)? debugLogger;
 
   @override
   Future<Stream<NfcWriteState>> startWrite(
