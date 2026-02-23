@@ -26,10 +26,10 @@ enum AppRoute {
   home('HOM-'),
   creation('CRE'),
   creationLockType('CLT'),
-  creationCapacity('CCA'),
-  creationInput('CIN'),
-  creationConfig('CCF'),
-  creationWrite('CWR'),
+  creationCapacity('CCA'), //2/5
+  creationInput('CIN'), //3/5
+  creationConfig('CCF'), //4/5
+  creationWrite('CWR'), //5/5
   selectUnlock('SEL'),
   unlockPassword('UPS'),
   unlockPin('UPI'),

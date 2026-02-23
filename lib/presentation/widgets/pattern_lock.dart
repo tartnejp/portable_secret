@@ -92,8 +92,8 @@ class _PatternLockState extends State<PatternLock> {
     // Let's assume size is available via LayoutBuilder or fixed.
     // For simplicity, passing fixed size 300x300 in build.
 
-    final cellWidth = 300 / widget.dimension;
-    final cellHeight = 300 / widget.dimension;
+    final cellWidth = size.width / widget.dimension;
+    final cellHeight = size.height / widget.dimension;
 
     int col = (localPosition.dx ~/ cellWidth);
     int row = (localPosition.dy ~/ cellHeight);

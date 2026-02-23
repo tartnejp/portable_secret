@@ -45,6 +45,18 @@ class CreationNotifier extends _$CreationNotifier {
 
   // ... (Capacity check methods) ...
   // ... (Capacity check methods) ...
+  /// Starts an NFC session to measure the capacity of the tag.
+  ///
+  /// **DEPRECATED**: This method directly awaits [backgroundTagStream] which is
+  /// a broadcast stream shared with [nfcDetectionStreamProvider].
+  /// If [listenNfcDetection<GenericNfcDetected>] is also active on the same screen,
+  /// both handlers will fire for the same tag, causing double state updates.
+  ///
+  /// Use [NfcService.startSession()] + [listenNfcDetection<GenericNfcDetected>] instead,
+  /// as done in [CapacityCheckPage].
+  @Deprecated(
+    'Use startSession() + listenNfcDetection<GenericNfcDetected> instead',
+  )
   Future<void> startCapacityScan({void Function(String)? onError}) async {
     final nfc = ref.read(nfcServiceProvider);
     state = state.copyWith(error: "タグをタッチしてください...");

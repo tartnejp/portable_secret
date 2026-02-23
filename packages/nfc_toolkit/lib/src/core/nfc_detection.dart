@@ -30,11 +30,17 @@ mixin OverlayDisplay on NfcDetection {
 /// A default detection event when an NFC tag is detected but no other
 /// specific detections matched (or they matched but we still want a generic fallback).
 class GenericNfcDetected extends NfcDetection with OverlayDisplay {
-  GenericNfcDetected({this.message = 'NFCタグを検知しました'})
+  GenericNfcDetected({this.message = 'NFCタグを検知しました', this.nfcMaxSize})
     : timestamp = DateTime.now();
 
   final String message;
   final DateTime timestamp;
+
+  /// The writable capacity of the detected tag in bytes, if available.
+  ///
+  /// This is populated from [Ndef.maxSize] when the tag supports NDEF.
+  /// `null` means the tag does not support NDEF or the size could not be determined.
+  final int? nfcMaxSize;
 
   @override
   FutureOr<NfcDetection?> detect(NfcData data) => this;

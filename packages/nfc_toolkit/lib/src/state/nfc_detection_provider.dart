@@ -110,9 +110,18 @@ Future<NfcDetection?> _detectAndDispatch(
     );
     return bestDetection;
   } else {
-    // 4b. No interested type → notify Generic handler (not the stream)
-    ref.read(nfcGenericHandlerProvider.notifier).notify(GenericNfcDetected());
-    return null;
+    // 4b. No specific type matched → Generic handling
+    final generic = GenericNfcDetected(nfcMaxSize: nfcData.ndef?.maxSize);
+
+    if (interestRegistry.hasInterest(GenericNfcDetected)) {
+      // Someone is explicitly listening via listenNfcDetection<GenericNfcDetected>
+      // → yield to the main stream so the UI can call stopSession() with a message
+      return generic;
+    } else {
+      // No one is listening → fall back to NfcDetectionScope overlay (no stopSession needed)
+      ref.read(nfcGenericHandlerProvider.notifier).notify(generic);
+      return null;
+    }
   }
 }
 

@@ -41,6 +41,13 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
       _checkTransition(prev, next);
     });
 
+    // Capture tag capacity via GenericNfcDetected (any NFC tag, not just app tags)
+    ref.listenNfcDetection<GenericNfcDetected>(context, (detection) async {
+      final capacity = detection.nfcMaxSize ?? 137; // fallback to NTAG213
+      notifier.selectManualCapacity(capacity);
+      return NfcSessionAction.success(message: '容量を計測しました ($capacity bytes)');
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('新規データ作成 (2/5)'),
@@ -65,9 +72,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
                 instructionText: "NFCカードをタッチしてください\n書き込み可能なデータサイズを計測します",
                 buttonText: '計測開始',
                 onStartSession: (onError) {
-                  ref
-                      .read(creationProvider.notifier)
-                      .startCapacityScan(onError: onError);
+                  ref.read(nfcServiceProvider).startSession();
                 },
               ),
               const SizedBox(height: 48),

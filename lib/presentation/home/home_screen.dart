@@ -128,8 +128,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       );
     });
 
-    // GenericNfcDetected is now handled internally by NfcDetectionScope
-    // (no longer flows through the stream)
+    // Listen for Generic NFC (non-app tags) → show message on scan sheet and re-enable scanning
+    ref.listenNfcDetection<GenericNfcDetected>(context, (detection) async {
+      return NfcSessionAction.error(
+        message: 'このアプリで作成されたタグではありません',
+        onComplete: () {
+          if (mounted) {
+            ref.read(nfcServiceProvider).startSession();
+          }
+        },
+      );
+    });
 
     // Listen for Read Errors
     ref.listenNfcDetection<NfcError>(context, (detection) async {
