@@ -232,6 +232,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
+            // ignore: deprecated_member_use
             RadioListTile<bool>(
               title: const Text("解除方式も選択を必須とする（安全）"),
               value: true,
@@ -241,6 +242,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
               },
               dense: true,
             ),
+            // ignore: deprecated_member_use
             RadioListTile<bool>(
               title: const Text("解除方式を自動判別して選択不要とする"),
               value: false,

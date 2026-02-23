@@ -126,41 +126,41 @@ class _MethodSelectionStep extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        ListTile(
+        // ignore: deprecated_member_use
+        RadioListTile<LockType>(
           title: const Text("パターン"),
-          leading: Radio<LockType>(
-            value: LockType.pattern,
-            groupValue: state.selectedType,
-            onChanged: (v) => notifier.selectMethod(v!),
-          ),
-          onTap: () => notifier.selectMethod(LockType.pattern),
+          value: LockType.pattern,
+          groupValue: state.selectedType,
+          onChanged: (v) {
+            if (v != null) notifier.selectMethod(v);
+          },
         ),
-        ListTile(
+        // ignore: deprecated_member_use
+        RadioListTile<LockType>(
           title: const Text("PIN (数字のみ)"),
-          leading: Radio<LockType>(
-            value: LockType.pin,
-            groupValue: state.selectedType,
-            onChanged: (v) => notifier.selectMethod(v!),
-          ),
-          onTap: () => notifier.selectMethod(LockType.pin),
+          value: LockType.pin,
+          groupValue: state.selectedType,
+          onChanged: (v) {
+            if (v != null) notifier.selectMethod(v);
+          },
         ),
-        ListTile(
+        // ignore: deprecated_member_use
+        RadioListTile<LockType>(
           title: const Text("パターン + PIN"),
-          leading: Radio<LockType>(
-            value: LockType.patternAndPin,
-            groupValue: state.selectedType,
-            onChanged: (v) => notifier.selectMethod(v!),
-          ),
-          onTap: () => notifier.selectMethod(LockType.patternAndPin),
+          value: LockType.patternAndPin,
+          groupValue: state.selectedType,
+          onChanged: (v) {
+            if (v != null) notifier.selectMethod(v);
+          },
         ),
-        ListTile(
+        // ignore: deprecated_member_use
+        RadioListTile<LockType>(
           title: const Text("パスワード (文字と数字)"),
-          leading: Radio<LockType>(
-            value: LockType.password,
-            groupValue: state.selectedType,
-            onChanged: (v) => notifier.selectMethod(v!),
-          ),
-          onTap: () => notifier.selectMethod(LockType.password),
+          value: LockType.password,
+          groupValue: state.selectedType,
+          onChanged: (v) {
+            if (v != null) notifier.selectMethod(v);
+          },
         ),
 
         const Spacer(),
@@ -426,6 +426,7 @@ class _InputDataStepState extends State<_InputDataStep> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
+        // ignore: deprecated_member_use
         RadioListTile<bool>(
           title: const Text("解除方式も選択を必須とする（安全）"),
           value: true,
@@ -435,6 +436,7 @@ class _InputDataStepState extends State<_InputDataStep> {
           },
           dense: true,
         ),
+        // ignore: deprecated_member_use
         RadioListTile<bool>(
           title: const Text("解除方式を自動判別して選択不要とする"),
           value: false,

@@ -121,17 +121,13 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
     LockType type,
     String label,
   ) {
-    return ListTile(
+    return RadioListTile<LockType>(
       key: type == LockType.pattern ? const Key('option_pattern') : null,
+      // ignore: deprecated_member_use
       title: Text(label),
-      leading: Radio<LockType>(
-        value: type,
-        groupValue: state.selectedType,
-        onChanged: (v) {
-          if (v != null) notifier.selectMethod(v);
-        },
-      ),
-      onTap: () => notifier.selectMethod(type),
+      value: type,
+      groupValue: state.selectedType,
+      onChanged: (v) => notifier.selectMethod(type),
     );
   }
 }

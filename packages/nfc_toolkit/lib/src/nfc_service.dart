@@ -183,9 +183,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   }) {
     NfcManager.instance
         .startSession(
-          pollingOptions: defaultTargetPlatform == TargetPlatform.iOS
-              ? {NfcPollingOption.iso14443, NfcPollingOption.iso15693}
-              : NfcPollingOption.values.toSet(),
+          pollingOptions: NfcPollingOption.values.toSet(),
           alertMessageIos: alertMessage ?? 'スキャンの準備ができました',
           onDiscovered: (tag) async {
             try {

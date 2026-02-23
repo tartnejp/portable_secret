@@ -29,10 +29,12 @@ mixin OverlayDisplay on NfcDetection {
 
 /// A default detection event when an NFC tag is detected but no other
 /// specific detections matched (or they matched but we still want a generic fallback).
-final class GenericNfcDetected extends NfcDetection with OverlayDisplay {
-  const GenericNfcDetected({this.message = 'NFCタグを検知しました'});
+class GenericNfcDetected extends NfcDetection with OverlayDisplay {
+  GenericNfcDetected({this.message = 'NFCタグを検知しました'})
+    : timestamp = DateTime.now();
 
   final String message;
+  final DateTime timestamp;
 
   @override
   FutureOr<NfcDetection?> detect(NfcData data) => this;

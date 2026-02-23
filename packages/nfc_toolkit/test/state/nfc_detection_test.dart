@@ -40,9 +40,11 @@ class MockNfcService implements NfcService {
   @override
   Future<void> init() async {}
 
-  Future<void> startSession({List<String>? pathPattern}) async {}
+  void startSessionWithTimeout({Duration? timeout}) {}
 
   @override
+  Future<void> startSession({List<String>? pathPattern}) async {}
+
   Future<void> stopSession({
     String? alertMessage,
     String? errorMessage,

@@ -94,7 +94,7 @@ void main() {
     expect(find.text('NFCタグを検知しました'), findsNothing);
 
     // Emit Generic Detection
-    streamController.add(const GenericNfcDetected());
+    streamController.add(GenericNfcDetected());
     await tester.pump(); // Process stream
     await tester.pump(); // Animation start
 
@@ -129,7 +129,7 @@ void main() {
     expect(find.text('Other Screen'), findsOneWidget);
 
     // Emit Generic Detection
-    streamController.add(const GenericNfcDetected());
+    streamController.add(GenericNfcDetected());
     await tester.pump(); // Process stream
     await tester.pump(); // Animation start
 

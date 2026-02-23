@@ -16,77 +16,79 @@ import '../riverpod/nfc_providers.dart';
 /// 3. Runs `detect()` on all of them in parallel (using [Future.wait]).
 /// 4. Yields all successful detections.
 /// 5. If no detection matches, yields [GenericNfcDetected].
-final StreamProvider<NfcDetection>
-nfcDetectionStreamProvider = StreamProvider<NfcDetection>((ref) async* {
-  final registry = ref.watch(nfcDetectionRegistryProvider);
-  final nfcService = ref.watch(nfcServiceProvider);
+final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
+    StreamProvider<NfcDetection>((ref) async* {
+      final registry = ref.watch(nfcDetectionRegistryProvider);
+      final nfcService = ref.watch(nfcServiceProvider);
 
-  // Check for initial tag (App Launch)
-  final initialTag = await nfcService.getInitialTag();
+      // Check for initial tag (App Launch)
+      final initialTag = await nfcService.getInitialTag();
 
-  if (initialTag != null) {
-    // Process initial tag
-    final results = <NfcDetection?>[];
-    for (final factory in registry.detectionFactories) {
-      final detection = await factory().detect(initialTag); // <--- await here!
-      results.add(detection);
-    }
-
-    final matchedDetections = results.whereType<NfcDetection>().toList();
-    if (matchedDetections.isNotEmpty) {
-      for (final detection in matchedDetections) {
-        yield detection;
-      }
-    }
-    // Always yield Generic
-    yield const GenericNfcDetected();
-  } else {
-    yield const IdleDetection();
-  }
-
-  // Listen to the stream of raw NFC data
-  await for (final nfcData in nfcService.backgroundTagStream) {
-    if (nfcData == null) {
-      yield const IdleDetection();
-      continue;
-    }
-
-    // 0. Check for read errors
-    if (nfcData.readError != null) {
-      yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
-      continue;
-    }
-
-    // 1. Instantiate factories
-    // 2. Run detect() in parallel
-    final results = await Future.wait(
-      registry.detectionFactories.map((factory) async {
-        try {
-          final detection = factory();
-          return await detection.detect(nfcData);
-        } catch (e, stack) {
-          debugPrint('Error in NfcDetection factory: $e\n$stack');
-          return null;
+      if (initialTag != null) {
+        // Process initial tag
+        final results = <NfcDetection?>[];
+        for (final factory in registry.detectionFactories) {
+          final detection = await factory().detect(
+            initialTag,
+          ); // <--- await here!
+          results.add(detection);
         }
-      }),
-    );
 
-    // Filter out nulls (non-matches)
-    final matchedDetections = results.whereType<NfcDetection>().toList();
-
-    if (matchedDetections.isNotEmpty) {
-      // Yield all matches
-      for (final detection in matchedDetections) {
-        yield detection;
+        final matchedDetections = results.whereType<NfcDetection>().toList();
+        if (matchedDetections.isNotEmpty) {
+          for (final detection in matchedDetections) {
+            yield detection;
+          }
+        } else {
+          // Only yield Generic if nothing matched
+          yield GenericNfcDetected();
+        }
+      } else {
+        yield const IdleDetection();
       }
-    }
 
-    // Always yield Generic (standard scope behavior)
-    // This ensures overlay appears on non-listening screens (for Secret tags)
-    // and for unknown tags.
-    yield const GenericNfcDetected();
-  }
-});
+      // Listen to the stream of raw NFC data
+      await for (final nfcData in nfcService.backgroundTagStream) {
+        if (nfcData == null) {
+          yield const IdleDetection();
+          continue;
+        }
+
+        // 0. Check for read errors
+        if (nfcData.readError != null) {
+          yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
+          continue;
+        }
+
+        // 1. Instantiate factories
+        // 2. Run detect() in parallel
+        final results = await Future.wait(
+          registry.detectionFactories.map((factory) async {
+            try {
+              final detection = factory();
+              return await detection.detect(nfcData);
+            } catch (e, stack) {
+              debugPrint('Error in NfcDetection factory: $e\n$stack');
+              return null;
+            }
+          }),
+        );
+
+        // Filter out nulls (non-matches)
+        final matchedDetections = results.whereType<NfcDetection>().toList();
+
+        if (matchedDetections.isNotEmpty) {
+          // Yield all matches
+          for (final detection in matchedDetections) {
+            yield detection;
+          }
+        } else {
+          // Only yield Generic if nothing matched
+          // This allows generic overlays for unknown tags
+          yield GenericNfcDetected();
+        }
+      }
+    });
 
 // Helper extensions
 

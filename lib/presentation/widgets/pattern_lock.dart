@@ -148,7 +148,8 @@ class _PatternPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final paintLine = Paint()
-      ..color = Colors.blue.withOpacity(0.5)
+      // ignore: deprecated_member_use
+      ..color = Colors.blue.withAlpha((255 * 0.5).round())
       ..strokeWidth = 6.0
       ..strokeCap = StrokeCap.round;
 
