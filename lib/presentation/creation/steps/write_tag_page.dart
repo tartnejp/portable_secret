@@ -24,7 +24,11 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
 
     ref.listen(creationProvider, (previous, next) {
       if (next.isSuccess && !(previous?.isSuccess ?? false)) {
-        _showSuccessDialog();
+        // Close the iOS scan sheet with a success message before showing the dialog
+        ref
+            .read(nfcServiceProvider)
+            .stopSession(alertMessage: '書き込みが成功しました')
+            .then((_) => _showSuccessDialog());
       }
       if (next.error != null && next.error != previous?.error) {
         // Show error but don't clear it immediately to avoid flickering loop if it persists?

@@ -10,6 +10,7 @@ import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
 // import '../../application/nfc/url_detection.dart'; // Imports UrlDetection (optional usage)
 
 import '../../router_provider.dart';
+import '../widgets/nfc_info_button.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -185,18 +186,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             const Icon(Icons.nfc, size: 80, color: Colors.blue),
             const SizedBox(height: 24),
             const SizedBox(height: 24),
-            NfcSessionTriggerWidget(
-              instructionText: _statusMessage,
-              buttonText: 'NFCタグの読み取りを開始',
-              onStartSession: (onError) {
-                if (mounted) {
-                  setState(() {
-                    _statusMessage = 'NFCタグをタッチしてください';
-                  });
-                }
-                _addLog('startSession() called');
-                ref.read(nfcServiceProvider).startSession();
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: NfcSessionTriggerWidget(
+                    instructionText: _statusMessage,
+                    buttonText: 'NFCタグの読み取りを開始',
+                    onStartSession: (onError) {
+                      if (mounted) {
+                        setState(() {
+                          _statusMessage = 'NFCタグをタッチしてください';
+                        });
+                      }
+                      _addLog('startSession() called');
+                      ref.read(nfcServiceProvider).startSession();
+                    },
+                  ),
+                ),
+                const NfcInfoButton(
+                  message:
+                      'iPhoneやiPadが反応しないNFCタグがあります。このような場合はデータに関わらず本アプリでも扱えません。'
+                      'その際は、NFC Toolsというアプリでタグの初期化を実施の上、書き込みを行ってください。',
+                  url: 'https://apps.apple.com/jp/app/nfc-tools/id1252962749',
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             // DEBUG LOG (HomeScreen events + Toolkit internal)
