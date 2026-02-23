@@ -199,9 +199,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               },
             ),
             const SizedBox(height: 24),
-            // DEBUG LOG
+            // DEBUG LOG (HomeScreen events + Toolkit internal)
             Container(
-              height: 150,
+              height: 200,
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(8),
@@ -209,19 +209,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 color: Colors.black87,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: SingleChildScrollView(
-                reverse: true,
-                child: Text(
-                  _debugLog.join('\n'),
-                  style: const TextStyle(
-                    color: Colors.greenAccent,
-                    fontSize: 11,
-                    fontFamily: 'monospace',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '── UI ──',
+                    style: TextStyle(color: Colors.yellow, fontSize: 10),
                   ),
-                ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      reverse: true,
+                      child: Text(
+                        _debugLog.join('\n'),
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    '── Toolkit ──',
+                    style: TextStyle(color: Colors.yellow, fontSize: 10),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      reverse: true,
+                      child: Consumer(
+                        builder: (_, ref, __) {
+                          final tkLog = ref.watch(nfcDebugLogProvider);
+                          return Text(
+                            tkLog.join('\n'),
+                            style: const TextStyle(
+                              color: Colors.cyanAccent,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
+
             ElevatedButton.icon(
               onPressed: () async {
                 final draftRepo = ref.read(wizardDraftRepositoryProvider);

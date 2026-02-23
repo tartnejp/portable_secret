@@ -276,6 +276,17 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   Future<void> _handleBackgroundTag(NfcTag tag) async {
     try {
       final data = NfcData(tag);
+      // Eagerly read NDEF message while the tag is still connected.
+      // On iOS, the tag connection may be lost after onDiscovered returns,
+      // so we must read here. The result is cached in NfcData for later use.
+      try {
+        await data.getOrReadMessage().timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => null,
+        );
+      } catch (_) {
+        // Read failed or timed out — proceed with whatever we have
+      }
       if (_backgroundTagController.hasListener) {
         _backgroundTagController.add(data);
       } else {

@@ -6,6 +6,7 @@ import '../nfc_data.dart';
 import 'nfc_session.dart';
 import 'nfc_interest_registry.dart';
 import 'nfc_generic_handler.dart';
+import 'nfc_debug_log.dart';
 
 import '../providers/nfc_detection_registry.dart';
 import '../riverpod/nfc_providers.dart';
@@ -48,8 +49,19 @@ final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
           continue;
         }
 
-        // Check for read errors
+        // DEBUG: Log NfcData state before dispatch
+        ref
+            .read(nfcDebugLogProvider.notifier)
+            .add(
+              'TAG: ndef=${nfcData.ndef != null}, '
+              'cached=${nfcData.cachedMessage != null}',
+            );
+
+        // Check for read errors set during eager read in _handleBackgroundTag
         if (nfcData.readError != null) {
+          ref
+              .read(nfcDebugLogProvider.notifier)
+              .add('TAG readError before dispatch: ${nfcData.readError}');
           yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
           continue;
         }
@@ -60,8 +72,23 @@ final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
           ref,
           nfcData,
         );
+
+        // DEBUG: Check if readError was set DURING detect()
+        if (nfcData.readError != null) {
+          ref
+              .read(nfcDebugLogProvider.notifier)
+              .add('TAG readError after dispatch: ${nfcData.readError}');
+        }
+
         if (result != null) {
+          ref
+              .read(nfcDebugLogProvider.notifier)
+              .add('DISPATCH result: ${result.runtimeType}');
           yield result;
+        } else {
+          ref
+              .read(nfcDebugLogProvider.notifier)
+              .add('DISPATCH: no result (Generic or suppressed)');
         }
       }
     });
@@ -85,6 +112,7 @@ Future<NfcDetection?> _detectAndDispatch(
         return await detection.detect(nfcData);
       } catch (e, stack) {
         debugPrint('Error in NfcDetection factory: $e\n$stack');
+        ref.read(nfcDebugLogProvider.notifier).add('FACTORY ERR: $e');
         return null;
       }
     }),

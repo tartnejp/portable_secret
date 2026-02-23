@@ -53,21 +53,33 @@ class NfcData {
   String? _readError;
   String? get readError => _readError;
 
+  /// Cached result from a previous [getOrReadMessage] call.
+  NdefMessage? _eagerReadCache;
+
   /// Returns the cached message if available, or attempts to read from the tag.
   ///
-  /// This is useful when the initial scan didn't capture the NDEF message
-  /// (e.g. background scan limitations) but the tag is still connected.
+  /// On iOS, the NFC tag connection may be lost after the `onDiscovered`
+  /// callback returns. This method should be called eagerly (inside the
+  /// callback) to cache the NDEF message while the tag is still connected.
+  /// Subsequent calls return the cached result without contacting the tag.
   Future<NdefMessage?> getOrReadMessage() async {
     // 1. Return cached message if available
     if (cachedMessage != null) return cachedMessage;
 
-    // 2. Try to read from tag if connection exists
+    // 2. Return eagerly-read cached message
+    if (_eagerReadCache != null) return _eagerReadCache;
+
+    // 3. Try to read from tag if connection exists (2-second safety timeout)
     if (_ndef != null) {
       try {
-        return await _ndef.read();
+        _eagerReadCache = await _ndef.read().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => null,
+        );
+        return _eagerReadCache;
       } catch (e) {
         _readError = e.toString();
-        // Read failed (tag lost, etc)
+        // Read failed (tag lost, timeout, etc)
       }
     }
     return null;
