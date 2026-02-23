@@ -51,15 +51,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   @override
   void didPushNext() {
-    // Called when we navigate away from this screen
-    _isResumed = false;
+    // No longer need to track _isResumed — Toolkit handles frontmost check
   }
 
   @override
   void didPopNext() {
     // Called when we return to this screen from another screen
     debugPrint("HomeScreen: didPopNext -> Resetting NFC Session");
-    _isResumed = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
@@ -77,14 +75,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   String _statusMessage = 'NFCタグをタッチしてください';
-  bool _isResumed = true; // Tracks if this screen is currently top-most
 
   @override
   Widget build(BuildContext context) {
     // Listen for Secret Detection
-    ref.listenNfcDetection<SecretDetection>((detection) async {
-      if (!_isResumed)
-        return NfcSessionAction.none(); // Ignore detections if we are not the active screen
+    ref.listenNfcDetection<SecretDetection>(context, (detection) async {
+      // Frontmost check is handled automatically by Toolkit
 
       final foundLockMethod = detection.foundLockMethod;
       final encryptedText = detection.encryptedText!;
@@ -132,18 +128,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       );
     });
 
-    // Listen for Generic/Unknown Detection (Update UI message)
-    ref.listenNfcDetection<GenericNfcDetected>((detection) async {
-      if (mounted) {
-        setState(() {
-          _statusMessage = '未登録、または不明なNFCタグです';
-        });
-      }
-      return NfcSessionAction.error(message: '未登録のNFCタグです');
-    });
+    // GenericNfcDetected is now handled internally by NfcDetectionScope
+    // (no longer flows through the stream)
 
     // Listen for Read Errors
-    ref.listenNfcDetection<NfcError>((detection) async {
+    ref.listenNfcDetection<NfcError>(context, (detection) async {
       if (mounted) {
         setState(() {
           _statusMessage = '読み取りエラー: 再度タッチしてください';

@@ -12,6 +12,8 @@ export 'src/core/nfc_detection.dart';
 export 'src/providers/nfc_detection_registry.dart';
 export 'src/state/nfc_detection_provider.dart';
 export 'src/state/nfc_session.dart';
+export 'src/state/nfc_interest_registry.dart';
+export 'src/state/nfc_generic_handler.dart';
 
 // UI
 export 'src/ui/nfc_detection_scope.dart';

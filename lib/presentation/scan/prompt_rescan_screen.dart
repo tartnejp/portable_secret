@@ -14,43 +14,12 @@ class PromptRescanScreen extends ConsumerStatefulWidget {
   ConsumerState<PromptRescanScreen> createState() => _PromptRescanScreenState();
 }
 
-class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
-    with RouteAware {
-  bool _isResumed = true;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final observer = ref.read(routeObserverProvider);
-    final route = ModalRoute.of(context);
-    if (route is PageRoute) {
-      observer.subscribe(this, route);
-    }
-  }
-
-  @override
-  void dispose() {
-    try {
-      ref.read(routeObserverProvider).unsubscribe(this);
-    } catch (_) {}
-    super.dispose();
-  }
-
-  @override
-  void didPushNext() {
-    _isResumed = false;
-  }
-
-  @override
-  void didPopNext() {
-    _isResumed = true;
-  }
-
+class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen> {
   @override
   Widget build(BuildContext context) {
     // Listen for Secret Detection
-    ref.listenNfcDetection<SecretDetection>((detection) async {
-      if (!_isResumed) return NfcSessionAction.none();
+    ref.listenNfcDetection<SecretDetection>(context, (detection) async {
+      // Frontmost check is handled automatically by Toolkit
 
       final foundLockMethod = detection.foundLockMethod;
       final encryptedText = detection.encryptedText!;
@@ -98,20 +67,12 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen>
       );
     });
 
-    // Listen for Generic/Unknown Detection
-    ref.listenNfcDetection<GenericNfcDetected>((detection) async {
-      // Show failure snackbar, tell them to tap again
-      if (mounted && _isResumed) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('未対応のタグです。もう一度正しいタグをタッチしてください。')),
-        );
-      }
-      return NfcSessionAction.error(message: '未登録のNFCタグです');
-    });
+    // GenericNfcDetected is now handled internally by NfcDetectionScope
+    // (no longer flows through the stream)
 
     // Listen for Read Errors
-    ref.listenNfcDetection<NfcError>((detection) async {
-      if (mounted && _isResumed) {
+    ref.listenNfcDetection<NfcError>(context, (detection) async {
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('読み取りエラー。もう一度タッチしてください。')));

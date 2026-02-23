@@ -91,7 +91,7 @@ class _NfcSessionTriggerWidgetState
   @override
   Widget build(BuildContext context) {
     // Listen for generic NFC errors exposed on the toolkit
-    ref.listenNfcDetection<NfcError>((error) async {
+    ref.listenNfcDetection<NfcError>(context, (error) async {
       _handleError(error.message);
       return NfcSessionAction.none();
     });

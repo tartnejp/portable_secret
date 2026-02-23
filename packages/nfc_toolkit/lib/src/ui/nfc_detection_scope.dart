@@ -2,11 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/nfc_detection.dart';
-import '../state/nfc_detection_provider.dart';
-import '../state/nfc_session.dart';
+import '../state/nfc_generic_handler.dart';
 
-/// A wrapper widget that listens to [NfcDetectionStreamProvider] and displays
-/// overlay messages for detected tags.
+/// A wrapper widget that listens to [nfcGenericHandlerProvider] and displays
+/// overlay messages for unrecognized (Generic) tags.
 ///
 /// Features:
 /// - **Message Queueing**: If multiple detections occur, messages are displayed sequentially.
@@ -56,44 +55,17 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
     return ModalRoute.of(context)?.settings.name;
   }
 
-  void _onDetection(NfcDetection detection) {
-    if (detection is OverlayDisplay) {
-      final message = detection.overlayMessage;
-      final currentRoute = _getCurrentRoute(context);
+  void _onGenericDetection(GenericNfcDetected detection) {
+    final message = detection.overlayMessage;
+    final currentRoute = _getCurrentRoute(context);
 
-      // 1. Session Ownership Suppression (Global)
-      // If the session has been claimed (e.g. by another screen processing a Secret),
-      // we suppress Generic fallbacks entirely to avoid interfering with their custom sheet closure.
-      if (detection is GenericNfcDetected) {
-        final sessionState = ref.read(nfcSessionControllerProvider);
-        if (sessionState == NfcSessionState.claimed) {
-          debugPrint(
-            "NfcDetectionScope: Suppressing GenericNfcDetected because session is Claimed",
-          );
-          return;
-        }
-      }
-
-      // 2. Generic Suppression (Legacy/Simple)
-      if (detection is GenericNfcDetected) {
-        if (currentRoute != null &&
-            widget.disableGenericDetectionRoutes.contains(currentRoute)) {
-          return; // Suppress
-        }
-      }
-
-      // 3. Type-based Suppression
-      if (currentRoute != null &&
-          widget.routeDetectionSuppressions.containsKey(currentRoute)) {
-        final suppressedTypes =
-            widget.routeDetectionSuppressions[currentRoute]!;
-        if (suppressedTypes.contains(detection.runtimeType)) {
-          return; // Suppress
-        }
-      }
-
-      _addToQueue(message);
+    // Route-based suppression
+    if (currentRoute != null &&
+        widget.disableGenericDetectionRoutes.contains(currentRoute)) {
+      return; // Suppress
     }
+
+    _addToQueue(message);
   }
 
   void _addToQueue(String message) {
@@ -129,7 +101,7 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
       });
     }
 
-    // Small gap for visual transition (optional, but requested "disappear then next")
+    // Small gap for visual transition
     await Future.delayed(const Duration(milliseconds: 300));
 
     // Process next
@@ -146,14 +118,15 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to ALL detections
-    ref.listen<AsyncValue<NfcDetection>>(
-      nfcDetectionStreamProvider,
-      (previous, next) {
-        next.whenData(_onDetection);
-      },
-      onError: (err, stack) => debugPrint('NFC Detection Error: $err'),
-    );
+    // Listen to Generic detections (delivered directly, not via the main stream)
+    ref.listen<GenericNfcDetected?>(nfcGenericHandlerProvider, (
+      previous,
+      next,
+    ) {
+      if (next != null) {
+        _onGenericDetection(next);
+      }
+    });
 
     return Stack(
       children: [

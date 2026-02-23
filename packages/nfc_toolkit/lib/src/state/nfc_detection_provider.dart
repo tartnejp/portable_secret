@@ -1,47 +1,41 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/nfc_detection.dart';
 import '../nfc_service.dart';
-import '../nfc_data.dart'; // Add for NfcError
+import '../nfc_data.dart';
 import 'nfc_session.dart';
+import 'nfc_interest_registry.dart';
+import 'nfc_generic_handler.dart';
 
 import '../providers/nfc_detection_registry.dart';
 import '../riverpod/nfc_providers.dart';
 
 /// Global provider that listens to NFC tags and yields relevant [NfcDetection] events.
 ///
-/// This provider uses the "Parallel Detection" strategy:
+/// This provider uses the "1 Scan = 1 Event" strategy:
 /// 1. Listens to the background tag stream from [NfcService].
-/// 2. Instantiates all registered [NfcDetection] prototypes from [NfcDetectionRegistry].
-/// 3. Runs `detect()` on all of them in parallel (using [Future.wait]).
-/// 4. Yields all successful detections.
-/// 5. If no detection matches, yields [GenericNfcDetected].
+/// 2. Runs `detect()` on all registered [NfcDetection] prototypes in parallel.
+/// 3. Consults [NfcInterestRegistry] to select the best matching type.
+/// 4. Yields exactly ONE event per scan (the best match with the highest priority).
+/// 5. If no interested type matches, notifies [nfcGenericHandlerProvider] instead.
 final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
     StreamProvider<NfcDetection>((ref) async* {
       final registry = ref.watch(nfcDetectionRegistryProvider);
       final nfcService = ref.watch(nfcServiceProvider);
+      final interestRegistry = ref.read(nfcInterestRegistryProvider.notifier);
 
       // Check for initial tag (App Launch)
       final initialTag = await nfcService.getInitialTag();
 
       if (initialTag != null) {
-        // Process initial tag
-        final results = <NfcDetection?>[];
-        for (final factory in registry.detectionFactories) {
-          final detection = await factory().detect(
-            initialTag,
-          ); // <--- await here!
-          results.add(detection);
-        }
-
-        final matchedDetections = results.whereType<NfcDetection>().toList();
-        if (matchedDetections.isNotEmpty) {
-          for (final detection in matchedDetections) {
-            yield detection;
-          }
-        } else {
-          // Only yield Generic if nothing matched
-          yield GenericNfcDetected();
+        final result = await _detectAndDispatch(
+          registry,
+          interestRegistry,
+          ref,
+          initialTag,
+        );
+        if (result != null) {
+          yield result;
         }
       } else {
         yield const IdleDetection();
@@ -54,129 +48,131 @@ final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
           continue;
         }
 
-        // 0. Check for read errors
+        // Check for read errors
         if (nfcData.readError != null) {
           yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
           continue;
         }
 
-        // 1. Instantiate factories
-        // 2. Run detect() in parallel
-        final results = await Future.wait(
-          registry.detectionFactories.map((factory) async {
-            try {
-              final detection = factory();
-              return await detection.detect(nfcData);
-            } catch (e, stack) {
-              debugPrint('Error in NfcDetection factory: $e\n$stack');
-              return null;
-            }
-          }),
+        final result = await _detectAndDispatch(
+          registry,
+          interestRegistry,
+          ref,
+          nfcData,
         );
-
-        // Filter out nulls (non-matches)
-        final matchedDetections = results.whereType<NfcDetection>().toList();
-
-        if (matchedDetections.isNotEmpty) {
-          // Yield all matches
-          for (final detection in matchedDetections) {
-            yield detection;
-          }
-        } else {
-          // Only yield Generic if nothing matched
-          // This allows generic overlays for unknown tags
-          yield GenericNfcDetected();
+        if (result != null) {
+          yield result;
         }
       }
     });
 
-// Helper extensions
+/// Runs all registered detection factories against [nfcData] and selects
+/// the best event to dispatch based on [NfcInterestRegistry] priorities.
+///
+/// Returns the selected [NfcDetection] event, or `null` if no interested
+/// type matched (in which case [nfcGenericHandlerProvider] is notified).
+Future<NfcDetection?> _detectAndDispatch(
+  NfcDetectionRegistry registry,
+  NfcInterestRegistry interestRegistry,
+  Ref ref,
+  NfcData nfcData,
+) async {
+  // 1. Run detect() on all registered factories in parallel
+  final detectionResults = await Future.wait(
+    registry.detectionFactories.map((factory) async {
+      try {
+        final detection = factory();
+        return await detection.detect(nfcData);
+      } catch (e, stack) {
+        debugPrint('Error in NfcDetection factory: $e\n$stack');
+        return null;
+      }
+    }),
+  );
 
-/// Extensions for [Ref] (and [WidgetRef]) to easily listen to specific NFC detections.
-extension NfcDetectionRefExtension on Ref {
-  /// Listens for a specific [NfcDetection] type and triggers [onData] when it occurs.
-  ///
-  /// This is a typesafe wrapper around `ref.listen`.
-  /// The provided callback MUST return a `Future<NfcSessionAction>`.
-  ///
-  /// During execution, the session is claimed to prevent generic fallbacks.
-  /// Once the Future completes, the underlying session is closed with the specified action result.
-  void listenNfcDetection<T extends NfcDetection>(
-    Future<NfcSessionAction> Function(T detection) onData, {
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) {
-    listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
-      previous,
-      next,
-    ) {
-      next.when(
-        data: (detection) {
-          if (detection is T) {
-            Future.microtask(() async {
-              final controller = read(nfcSessionControllerProvider.notifier);
-              if (!controller.takeOwnership()) return;
+  // 2. Collect matched detections with their types
+  final matchedDetections = <NfcDetection>[];
+  final matchedTypes = <Type>[];
+  for (final detection in detectionResults) {
+    if (detection != null) {
+      matchedDetections.add(detection);
+      matchedTypes.add(detection.runtimeType);
+    }
+  }
 
-              try {
-                final action = await onData(detection);
+  // 3. Ask Interest Registry which type to dispatch
+  final bestType = interestRegistry.selectBestType(matchedTypes);
 
-                final nfcService = read(nfcServiceProvider);
-                if (action.isSuccess) {
-                  await nfcService.stopSession(
-                    alertMessage: action.message ?? '完了しました',
-                  );
-                  // TODO: Trigger Android success overlay
-                  action.onComplete?.call();
-                } else if (action.isNone) {
-                  await nfcService.stopSession();
-                  action.onComplete?.call();
-                } else {
-                  await nfcService.stopSession(
-                    errorMessage: action.message ?? 'エラーが発生しました',
-                  );
-                  // TODO: Trigger Android error overlay
-                  action.onComplete?.call();
-                }
-              } catch (e, stackTrace) {
-                if (onError != null) {
-                  onError(e, stackTrace);
-                }
-                await read(
-                  nfcServiceProvider,
-                ).stopSession(errorMessage: e.toString());
-              } finally {
-                controller.releaseOwnership();
-              }
-            });
-          }
-        },
-        error:
-            onError ??
-            (error, stack) {
-              // debugPrint('NfcDetection error: $error');
-            },
-        loading: () {},
-      );
-    });
+  if (bestType != null) {
+    // 4a. Found an interested type → yield the corresponding detection
+    final bestDetection = matchedDetections.firstWhere(
+      (d) => d.runtimeType == bestType,
+    );
+    return bestDetection;
+  } else {
+    // 4b. No interested type → notify Generic handler (not the stream)
+    ref.read(nfcGenericHandlerProvider.notifier).notify(GenericNfcDetected());
+    return null;
   }
 }
 
-// Compatibility for WidgetRef
+// --- Helper extensions ---
+
+/// Set of screenIds that have been registered with the Interest Registry.
+/// Used to ensure unregistration happens when widgets are disposed.
+final _activeRegistrations = <int, _RegistrationInfo>{};
+
+class _RegistrationInfo {
+  final Type type;
+  _RegistrationInfo(this.type);
+}
+
+/// Extensions for [WidgetRef] to easily listen to specific NFC detections.
+///
+/// This is the primary API for UI screens to handle NFC events.
+/// The extension automatically:
+/// - Registers interest in type [T] with the [NfcInterestRegistry].
+/// - Checks if this screen is the frontmost route before executing.
+/// - Calls [NfcService.stopSession] with the appropriate message after processing.
+/// - Unregisters interest when the widget is disposed (detected via unmounted context).
 extension NfcDetectionWidgetRefExtension on WidgetRef {
   void listenNfcDetection<T extends NfcDetection>(
+    BuildContext context,
     Future<NfcSessionAction> Function(T detection) onData, {
     void Function(Object error, StackTrace stackTrace)? onError,
+    int priority = 1,
   }) {
+    final screenId = identityHashCode(context);
+    final interestRegistry = read(nfcInterestRegistryProvider.notifier);
+
+    // Defer registration to after the build phase to comply with
+    // Riverpod's constraint: providers cannot be modified during build().
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context is Element && !context.mounted) return;
+      interestRegistry.register(T, screenId, priority);
+      _activeRegistrations[screenId] = _RegistrationInfo(T);
+    });
+
     listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
       previous,
       next,
     ) {
+      // Check if context is still valid (widget still mounted)
+      if (context is Element && !context.mounted) {
+        // Context is no longer valid — clean up registration
+        interestRegistry.unregister(T, screenId);
+        _activeRegistrations.remove(screenId);
+        return;
+      }
+
       next.when(
         data: (detection) {
           if (detection is T) {
-            Future.microtask(() async {
-              final controller = read(nfcSessionControllerProvider.notifier);
-              if (!controller.takeOwnership()) return;
+            // Frontmost check
+            final isFront = ModalRoute.of(context)?.isCurrent ?? false;
+            if (!isFront) return;
 
+            Future.microtask(() async {
               try {
                 final action = await onData(detection);
 
@@ -202,8 +198,6 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
                 await read(
                   nfcServiceProvider,
                 ).stopSession(errorMessage: e.toString());
-              } finally {
-                controller.releaseOwnership();
               }
             });
           }

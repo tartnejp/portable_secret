@@ -20,6 +20,9 @@ void main() {
         overrides: [
           nfcServiceProvider.overrideWithValue(mockNfcService),
           initializationProvider.overrideWith((ref) async => ()),
+          nfcDetectionRegistryProvider.overrideWithValue(
+            NfcDetectionRegistry([]),
+          ),
         ],
         child: const MaterialApp(
           home: const HomeScreen(), // Pump directly without router first
@@ -44,6 +47,9 @@ void main() {
         overrides: [
           nfcServiceProvider.overrideWithValue(mockNfcService),
           initializationProvider.overrideWith((ref) async => ()),
+          nfcDetectionRegistryProvider.overrideWithValue(
+            NfcDetectionRegistry([]),
+          ),
         ],
         child: Consumer(
           builder: (context, ref, _) {
