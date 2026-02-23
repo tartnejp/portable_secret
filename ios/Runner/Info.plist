@@ -56,5 +56,11 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>com.apple.developer.nfc.readersession.felica.systemcodes</key>
+	<array>
+		<string>0003</string>
+		<string>0000</string>
+		<string>FE00</string>
+	</array>
 </dict>
 </plist>
