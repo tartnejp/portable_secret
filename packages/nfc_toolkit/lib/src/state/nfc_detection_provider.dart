@@ -125,13 +125,16 @@ extension NfcDetectionRefExtension on Ref {
                     alertMessage: action.message ?? '完了しました',
                   );
                   // TODO: Trigger Android success overlay
+                  action.onComplete?.call();
                 } else if (action.isNone) {
                   await nfcService.stopSession();
+                  action.onComplete?.call();
                 } else {
                   await nfcService.stopSession(
                     errorMessage: action.message ?? 'エラーが発生しました',
                   );
                   // TODO: Trigger Android error overlay
+                  action.onComplete?.call();
                 }
               } catch (e, stackTrace) {
                 if (onError != null) {
@@ -182,12 +185,15 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
                   await nfcService.stopSession(
                     alertMessage: action.message ?? '完了しました',
                   );
+                  action.onComplete?.call();
                 } else if (action.isNone) {
                   await nfcService.stopSession();
+                  action.onComplete?.call();
                 } else {
                   await nfcService.stopSession(
                     errorMessage: action.message ?? 'エラーが発生しました',
                   );
+                  action.onComplete?.call();
                 }
               } catch (e, stackTrace) {
                 if (onError != null) {

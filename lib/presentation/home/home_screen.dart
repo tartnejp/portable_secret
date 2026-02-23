@@ -89,41 +89,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       final foundLockMethod = detection.foundLockMethod;
       final encryptedText = detection.encryptedText!;
 
-      if (foundLockMethod == null) {
-        if (mounted) {
-          context.pushNamed(
-            AppRoute.selectUnlock.name,
-            extra: {
-              'encryptedText': encryptedText,
-              'capacity': detection.capacity,
-            },
-          );
-        }
-      } else {
-        String routeName = AppRoute.unlockPattern.name;
-        switch (foundLockMethod.type) {
-          case LockType.password:
-            routeName = AppRoute.unlockPassword.name;
-            break;
-          case LockType.pin:
-            routeName = AppRoute.unlockPin.name;
-            break;
-          case LockType.pattern:
-          case LockType.patternAndPin:
-            routeName = AppRoute.unlockPattern.name;
-            break;
-        }
-        context.pushNamed(
-          routeName,
-          extra: {
-            'encryptedText': encryptedText,
-            'lockType': foundLockMethod.type.index,
-            'capacity': detection.capacity,
-            'isManualUnlockRequired': false,
-          },
-        );
-      }
-      return NfcSessionAction.success(message: 'ロック解除画面へ移動します');
+      return NfcSessionAction.success(
+        message: 'ロック解除画面へ移動します',
+        onComplete: () {
+          if (foundLockMethod == null) {
+            if (mounted) {
+              context.pushNamed(
+                AppRoute.selectUnlock.name,
+                extra: {
+                  'encryptedText': encryptedText,
+                  'capacity': detection.capacity,
+                },
+              );
+            }
+          } else {
+            String routeName = AppRoute.unlockPattern.name;
+            switch (foundLockMethod.type) {
+              case LockType.password:
+                routeName = AppRoute.unlockPassword.name;
+                break;
+              case LockType.pin:
+                routeName = AppRoute.unlockPin.name;
+                break;
+              case LockType.pattern:
+              case LockType.patternAndPin:
+                routeName = AppRoute.unlockPattern.name;
+                break;
+            }
+            if (mounted) {
+              context.pushNamed(
+                routeName,
+                extra: {
+                  'encryptedText': encryptedText,
+                  'lockType': foundLockMethod.type.index,
+                  'capacity': detection.capacity,
+                  'isManualUnlockRequired': false,
+                },
+              );
+            }
+          }
+        },
+      );
     });
 
     // Listen for Generic/Unknown Detection (Update UI message)
