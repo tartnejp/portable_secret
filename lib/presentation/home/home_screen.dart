@@ -75,11 +75,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   String _statusMessage = 'NFCタグをタッチしてください';
+  final List<String> _debugLog = [];
+
+  void _addLog(String msg) {
+    if (mounted) {
+      setState(() {
+        _debugLog.add('${DateTime.now().toString().substring(11, 19)} $msg');
+        if (_debugLog.length > 10) _debugLog.removeAt(0);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // DEBUG: Listen to raw stream to see what's coming through
+    ref.listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
+      previous,
+      next,
+    ) {
+      next.when(
+        data: (d) => _addLog('STREAM: ${d.runtimeType}'),
+        error: (e, _) => _addLog('STREAM ERR: $e'),
+        loading: () => _addLog('STREAM: loading'),
+      );
+    });
+
     // Listen for Secret Detection
     ref.listenNfcDetection<SecretDetection>(context, (detection) async {
+      _addLog('SECRET handler fired');
       // Frontmost check is handled automatically by Toolkit
 
       final foundLockMethod = detection.foundLockMethod;
@@ -130,6 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
     // Listen for Generic NFC (non-app tags) → show message on scan sheet and re-enable scanning
     ref.listenNfcDetection<GenericNfcDetected>(context, (detection) async {
+      _addLog('GENERIC handler fired');
       return NfcSessionAction.error(
         message: 'このアプリで作成されたタグではありません',
         onComplete: () {
@@ -142,6 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
     // Listen for Read Errors
     ref.listenNfcDetection<NfcError>(context, (detection) async {
+      _addLog('ERROR handler fired: ${detection.message}');
       if (mounted) {
         setState(() {
           _statusMessage = '読み取りエラー: 再度タッチしてください';
@@ -169,10 +194,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                     _statusMessage = 'NFCタグをタッチしてください';
                   });
                 }
+                _addLog('startSession() called');
                 ref.read(nfcServiceProvider).startSession();
               },
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 24),
+            // DEBUG LOG
+            Container(
+              height: 150,
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SingleChildScrollView(
+                reverse: true,
+                child: Text(
+                  _debugLog.join('\n'),
+                  style: const TextStyle(
+                    color: Colors.greenAccent,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () async {
                 final draftRepo = ref.read(wizardDraftRepositoryProvider);

@@ -108,17 +108,22 @@ Future<NfcDetection?> _detectAndDispatch(
     final bestDetection = matchedDetections.firstWhere(
       (d) => d.runtimeType == bestType,
     );
+
     return bestDetection;
   } else {
     // 4b. No specific type matched → Generic handling
     final generic = GenericNfcDetected(nfcMaxSize: nfcData.ndef?.maxSize);
 
-    if (interestRegistry.hasInterest(GenericNfcDetected)) {
+    final hasGenericInterest = interestRegistry.hasInterest(GenericNfcDetected);
+
+    if (hasGenericInterest) {
       // Someone is explicitly listening via listenNfcDetection<GenericNfcDetected>
       // → yield to the main stream so the UI can call stopSession() with a message
+
       return generic;
     } else {
       // No one is listening → fall back to NfcDetectionScope overlay (no stopSession needed)
+
       ref.read(nfcGenericHandlerProvider.notifier).notify(generic);
       return null;
     }
@@ -158,6 +163,7 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
     // Riverpod's constraint: providers cannot be modified during build().
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context is Element && !context.mounted) return;
+
       interestRegistry.register(T, screenId, priority);
       _activeRegistrations[screenId] = _RegistrationInfo(T);
     });
@@ -179,6 +185,7 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
           if (detection is T) {
             // Frontmost check
             final isFront = ModalRoute.of(context)?.isCurrent ?? false;
+
             if (!isFront) return;
 
             Future.microtask(() async {
