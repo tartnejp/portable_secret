@@ -141,6 +141,17 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   bool _initialTagConsumed = false;
   NfcData? _bufferedTag;
 
+  /// Guards against calling [stopSession] on an already-invalidated iOS NFC session.
+  ///
+  /// When the toolkit calls `stopSession(alertMessage: '...')`, iOS briefly shows
+  /// a success message on the scan sheet before auto-dismissing. If the user
+  /// manually taps X/Cancel during this brief window, `onSessionErrorIos` fires
+  /// and invalidates the session. Without this guard, the toolkit's pending
+  /// `stopSession` await would complete and subsequent `stopSession` calls
+  /// (e.g. from NfcError listeners) would cause `nfc_manager` to re-open and
+  /// immediately close a session, making the scan sheet flash on screen.
+  bool _isSessionActive = false;
+
   void _onBackgroundTagListen() {
     if (_bufferedTag != null) {
       _backgroundTagController.add(_bufferedTag);
@@ -187,6 +198,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
     String? alertMessage,
     void Function(String)? onError,
   }) {
+    _isSessionActive = true;
     NfcManager.instance
         .startSession(
           pollingOptions: NfcPollingOption.values.toSet(),
@@ -210,6 +222,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
             }
           },
           onSessionErrorIos: (error) async {
+            _isSessionActive = false;
             // Force the plugin to clear its internal session state
             await NfcManager.instance.stopSession().catchError((_) {});
 
@@ -235,6 +248,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           },
         )
         .catchError((e) async {
+          _isSessionActive = false;
           await NfcManager.instance.stopSession().catchError((_) {});
 
           // Push the raw error directly so the UI can log/copy it.
@@ -453,13 +467,19 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
   @override
   Future<void> stopSession({String? alertMessage, String? errorMessage}) async {
     debugLogger?.call(
-      'stopSession called (alert=$alertMessage, error=$errorMessage)',
+      'stopSession called (alert=$alertMessage, error=$errorMessage, active=$_isSessionActive)',
     );
     if (defaultTargetPlatform != TargetPlatform.iOS) {
       debugLogger?.call('stopSession skipped (not iOS)');
       return;
     }
 
+    if (!_isSessionActive) {
+      debugLogger?.call('stopSession skipped (session already inactive)');
+      return;
+    }
+
+    _isSessionActive = false;
     try {
       await NfcManager.instance.stopSession(
         alertMessageIos: alertMessage,
