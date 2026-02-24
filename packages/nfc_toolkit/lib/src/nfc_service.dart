@@ -223,8 +223,10 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           },
           onSessionErrorIos: (error) async {
             _isSessionActive = false;
-            // Force the plugin to clear its internal session state
-            await NfcManager.instance.stopSession().catchError((_) {});
+            // iOS has already invalidated the session at this point.
+            // Do NOT call NfcManager.instance.stopSession() here — doing so
+            // may cause nfc_manager to briefly re-open a session, resulting
+            // in the scan sheet flashing on screen.
 
             // Suppress the "User Canceled" error so it doesn't show as a red SnackBar
             if (error.code ==
@@ -249,7 +251,7 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
         )
         .catchError((e) async {
           _isSessionActive = false;
-          await NfcManager.instance.stopSession().catchError((_) {});
+          // Session failed to start — no native cleanup needed.
 
           // Push the raw error directly so the UI can log/copy it.
           final errorMsg = e.toString();

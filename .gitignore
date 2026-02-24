@@ -1,4 +1,9 @@
 /temp/
+X*.dart*
+/linux/
+/macos/
+/windows/
+/web/
 
 # Miscellaneous
 *.class
