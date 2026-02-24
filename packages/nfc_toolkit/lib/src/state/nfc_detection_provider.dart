@@ -133,8 +133,32 @@ Future<NfcDetection?> _detectAndDispatch(
     }
   }
 
-  // 3. Ask Interest Registry which type to dispatch
-  final bestType = interestRegistry.selectBestType(matchedTypes);
+  // 3. Filter matchedTypes to only those registered by a frontmost screen.
+  //    This prevents a background screen's interest (e.g. HOM-'s SecretDetection)
+  //    from intercepting tags meant for a foreground screen (e.g. CCA's GenericNfcDetected).
+  final frontScreenIds = <int>{};
+  for (final entry in _activeRegistrations.entries) {
+    final ctx = entry.value.context;
+    if (ctx is Element && ctx.mounted) {
+      final isCurrent = ModalRoute.of(ctx)?.isCurrent ?? false;
+      if (isCurrent) {
+        frontScreenIds.add(entry.key);
+      }
+    }
+  }
+
+  // Build a filtered list: only types that have at least one frontmost screenId registered
+  final frontMatchedTypes = <Type>[];
+  for (final type in matchedTypes) {
+    final registeredScreenIds = interestRegistry.getScreenIds(type);
+    if (registeredScreenIds != null &&
+        registeredScreenIds.any(frontScreenIds.contains)) {
+      frontMatchedTypes.add(type);
+    }
+  }
+
+  // 4. Ask Interest Registry which type to dispatch (using frontmost-filtered list)
+  final bestType = interestRegistry.selectBestType(frontMatchedTypes);
 
   if (bestType != null) {
     // 4a. Found an interested type → yield the corresponding detection
@@ -144,19 +168,21 @@ Future<NfcDetection?> _detectAndDispatch(
 
     return bestDetection;
   } else {
-    // 4b. No specific type matched → Generic handling
+    // 4b. No specific type matched by frontmost screen → Generic handling
     final generic = GenericNfcDetected(nfcMaxSize: nfcData.ndef?.maxSize);
 
-    final hasGenericInterest = interestRegistry.hasInterest(GenericNfcDetected);
+    // Check if any frontmost screen is listening for GenericNfcDetected
+    final genericScreenIds = interestRegistry.getScreenIds(GenericNfcDetected);
+    final hasFrontGenericInterest =
+        genericScreenIds != null &&
+        genericScreenIds.any(frontScreenIds.contains);
 
-    if (hasGenericInterest) {
-      // Someone is explicitly listening via listenNfcDetection<GenericNfcDetected>
+    if (hasFrontGenericInterest) {
+      // A frontmost screen is explicitly listening via listenNfcDetection<GenericNfcDetected>
       // → yield to the main stream so the UI can call stopSession() with a message
-
       return generic;
     } else {
-      // No one is listening → fall back to NfcDetectionScope overlay (no stopSession needed)
-
+      // No frontmost listener → fall back to NfcDetectionScope overlay (no stopSession needed)
       ref.read(nfcGenericHandlerProvider.notifier).notify(generic);
       return null;
     }
@@ -166,12 +192,14 @@ Future<NfcDetection?> _detectAndDispatch(
 // --- Helper extensions ---
 
 /// Set of screenIds that have been registered with the Interest Registry.
-/// Used to ensure unregistration happens when widgets are disposed.
+/// Used by [_detectAndDispatch] to filter by frontmost screens, and
+/// cleaned up on widget dispose via [WidgetRef.onDispose].
 final _activeRegistrations = <int, _RegistrationInfo>{};
 
 class _RegistrationInfo {
   final Type type;
-  _RegistrationInfo(this.type);
+  final BuildContext context;
+  _RegistrationInfo(this.type, this.context);
 }
 
 /// Extensions for [WidgetRef] to easily listen to specific NFC detections.
@@ -181,7 +209,7 @@ class _RegistrationInfo {
 /// - Registers interest in type [T] with the [NfcInterestRegistry].
 /// - Checks if this screen is the frontmost route before executing.
 /// - Calls [NfcService.stopSession] with the appropriate message after processing.
-/// - Unregisters interest when the widget is disposed (detected via unmounted context).
+/// - Unregisters interest when the widget is disposed via [onDispose].
 extension NfcDetectionWidgetRefExtension on WidgetRef {
   void listenNfcDetection<T extends NfcDetection>(
     BuildContext context,
@@ -198,7 +226,7 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
       if (context is Element && !context.mounted) return;
 
       interestRegistry.register(T, screenId, priority);
-      _activeRegistrations[screenId] = _RegistrationInfo(T);
+      _activeRegistrations[screenId] = _RegistrationInfo(T, context);
     });
 
     listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (

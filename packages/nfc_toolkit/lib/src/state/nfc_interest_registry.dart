@@ -56,6 +56,13 @@ class NfcInterestRegistry extends Notifier<Map<Type, Map<int, int>>> {
     return entries.values.reduce(max);
   }
 
+  /// Returns the set of screenIds registered for [type], or `null` if none.
+  Set<int>? getScreenIds(Type type) {
+    final entries = state[type];
+    if (entries == null || entries.isEmpty) return null;
+    return entries.keys.toSet();
+  }
+
   /// Given a list of matched detection types, selects the best one to dispatch.
   ///
   /// Selection criteria:
