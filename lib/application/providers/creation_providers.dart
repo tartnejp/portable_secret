@@ -1,11 +1,3 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/value_objects/secret_data.dart';
-import '../../domain/value_objects/lock_method.dart';
-import 'encryption_providers.dart';
-// import 'di/services_provider.dart'; // Removed
-import 'package:nfc_toolkit/nfc_toolkit.dart';
-import '../../application/services/capacity_calculator.dart';
-
 // Actually NfcData exposes `ndef` which returns `Ndef?` from `nfc_manager`, so we might need it for type checking if we use it directly.
 // The lint complained about unused import, so let's see.
 // We used `Ndef` in `startCapacityScan` inside the new code `scanState.data.ndef`.
@@ -14,9 +6,18 @@ import '../../application/services/capacity_calculator.dart';
 // So we likely need `nfc_manager` import if we interact with `Ndef` object properties like `maxSize`.
 
 import 'dart:typed_data';
-import '../../infrastructure/repositories/draft_repository_impl.dart';
 
+// import 'di/services_provider.dart'; // Removed
+import 'package:nfc_toolkit/nfc_toolkit.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../application/services/capacity_calculator.dart';
+import '../../domain/value_objects/lock_method.dart';
+import '../../domain/value_objects/secret_data.dart';
+import '../../infrastructure/repositories/draft_repository_impl.dart';
 import 'creation_state.dart';
+import 'encryption_providers.dart';
+
 export 'creation_state.dart';
 
 part 'creation_providers.g.dart';
@@ -54,9 +55,7 @@ class CreationNotifier extends _$CreationNotifier {
   ///
   /// Use [NfcService.startSession()] + [listenNfcDetection<GenericNfcDetected>] instead,
   /// as done in [CapacityCheckPage].
-  @Deprecated(
-    'Use startSession() + listenNfcDetection<GenericNfcDetected> instead',
-  )
+  @Deprecated('Use startSession() + listenNfcDetection<GenericNfcDetected> instead')
   Future<void> startCapacityScan({void Function(String)? onError}) async {
     final nfc = ref.read(nfcServiceProvider);
     state = state.copyWith(error: "タグをタッチしてください...");
@@ -69,11 +68,7 @@ class CreationNotifier extends _$CreationNotifier {
       final ndef = data!.ndef;
       int capacity = ndef?.maxSize ?? 137;
 
-      state = state.copyWith(
-        maxCapacity: capacity,
-        step: CreationStep.inputData,
-        error: null,
-      );
+      state = state.copyWith(maxCapacity: capacity, step: CreationStep.inputData, error: null);
     } catch (e) {
       state = state.copyWith(error: "NFCエラー: $e");
     }
@@ -187,12 +182,7 @@ class CreationNotifier extends _$CreationNotifier {
   }
 
   void retryLockInput() {
-    state = state.copyWith(
-      isConfirming: false,
-      lockInput: "",
-      firstInput: "",
-      error: null,
-    );
+    state = state.copyWith(isConfirming: false, lockInput: "", firstInput: "", error: null);
   }
 
   void nextFromLockConfig() {
@@ -203,8 +193,7 @@ class CreationNotifier extends _$CreationNotifier {
     }
 
     if ((state.selectedType == LockType.pin ||
-            (state.selectedType == LockType.patternAndPin &&
-                state.isLockSecondStage)) &&
+            (state.selectedType == LockType.patternAndPin && state.isLockSecondStage)) &&
         !RegExp(r'^\d+$').hasMatch(state.lockInput)) {
       state = state.copyWith(error: "PINは数字のみで入力してください");
       return;
@@ -220,12 +209,8 @@ class CreationNotifier extends _$CreationNotifier {
     } else {
       if (state.lockInput != state.firstInput) {
         if (state.selectedType == LockType.pattern ||
-            (state.selectedType == LockType.patternAndPin &&
-                !state.isLockSecondStage)) {
-          state = state.copyWith(
-            error: "パターンが一致しません。再度入力してください",
-            lockInput: "",
-          );
+            (state.selectedType == LockType.patternAndPin && !state.isLockSecondStage)) {
+          state = state.copyWith(error: "パターンが一致しません。再度入力してください", lockInput: "");
         } else {
           state = state.copyWith(
             error: "入力内容が一致しません。最初からやり直してください。",
@@ -238,8 +223,7 @@ class CreationNotifier extends _$CreationNotifier {
       }
 
       // Verification Successful
-      if (state.selectedType == LockType.patternAndPin &&
-          !state.isLockSecondStage) {
+      if (state.selectedType == LockType.patternAndPin && !state.isLockSecondStage) {
         // Pattern verified, move to PIN
         state = state.copyWith(
           isLockSecondStage: true,
@@ -297,9 +281,7 @@ class CreationNotifier extends _$CreationNotifier {
       // Check capacity
       // We use CapacityCalculator for pre-check, but here we can also just check the final payload + estimated NDEF overhead.
       // Or simply trust the exact calculation.
-      final estimatedTotal = CapacityCalculator.calculateTotalBytes(
-        state.items,
-      );
+      final estimatedTotal = CapacityCalculator.calculateTotalBytes(state.items);
       if (estimatedTotal > state.maxCapacity && state.maxCapacity > 0) {
         state = state.copyWith(
           error: "データサイズが大きすぎます ($estimatedTotal / ${state.maxCapacity} bytes)",
@@ -316,9 +298,7 @@ class CreationNotifier extends _$CreationNotifier {
       void handleWrite() async {
         try {
           final stream = await nfc.startWrite([
-            NfcWriteDataUri(
-              Uri.parse('https://static-site-wzq.pages.dev/unlock'),
-            ),
+            NfcWriteDataUri(Uri.parse('https://static-site-wzq.pages.dev/unlock')),
             NfcWriteDataMime('application/portablesec', payloadBytes),
           ], allowOverwrite: true);
 
@@ -380,6 +360,14 @@ class CreationNotifier extends _$CreationNotifier {
   }
 
   void backToLockConfig() {
-    state = state.copyWith(step: CreationStep.lockConfig, error: null);
+    state = state.copyWith(
+      step: CreationStep.lockConfig,
+      error: null,
+      isConfirming: false,
+      lockInput: "",
+      firstInput: "",
+      isLockSecondStage: false,
+      tempFirstLockInput: "",
+    );
   }
 }

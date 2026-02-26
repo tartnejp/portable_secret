@@ -11,16 +11,13 @@ import 'package:url_launcher/url_launcher.dart';
 /// )
 /// ```
 class NfcInfoButton extends StatelessWidget {
-  final String message;
-  final String? url;
+  final String message =
+      'iPhoneやiPadが反応しないNFCタグがあります。このような場合はデータに関わらず本アプリでも扱えません。'
+      'その際は、NFC Toolsというアプリでタグの初期化を実施の上、書き込みを行ってください。';
+  final String url = 'https://apps.apple.com/jp/app/nfc-tools/id1252962749';
   final String title;
 
-  const NfcInfoButton({
-    super.key,
-    required this.message,
-    this.url,
-    this.title = 'NFCタグについて',
-  });
+  const NfcInfoButton({super.key, this.title = 'NFCタグが反応しない時'});
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +25,10 @@ class NfcInfoButton extends StatelessWidget {
       icon: const Icon(Icons.info_outline),
       tooltip: title,
       onPressed: () => _showInfoDialog(context),
+      //以下は余白をなくすため
+      constraints: const BoxConstraints(),
+      padding: EdgeInsets.zero,
+      style: const ButtonStyle(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
     );
   }
 
@@ -42,12 +43,12 @@ class NfcInfoButton extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(message),
-              if (url != null) ...[
+              ...[
                 const SizedBox(height: 12),
                 GestureDetector(
-                  onTap: () => _launchUrl(url!),
+                  onTap: () => _launchUrl(url),
                   child: Text(
-                    url!,
+                    url,
                     style: const TextStyle(
                       color: Colors.blue,
                       decoration: TextDecoration.underline,
@@ -58,10 +59,7 @@ class NfcInfoButton extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('閉じる'),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('閉じる')),
           ],
         );
       },

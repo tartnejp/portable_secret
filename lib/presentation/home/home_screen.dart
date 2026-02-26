@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nfc_toolkit/nfc_toolkit.dart'; // Imports nfcServiceProvider, NfcDetectionRefExtension, GenericNfcDetected
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 
+import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
 import '../../domain/value_objects/lock_method.dart';
 import '../../infrastructure/repositories/draft_repository_impl.dart';
-import 'package:nfc_toolkit/nfc_toolkit.dart'; // Imports nfcServiceProvider, NfcDetectionRefExtension, GenericNfcDetected
-import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
-// import '../../application/nfc/url_detection.dart'; // Imports UrlDetection (optional usage)
-
 import '../../router_provider.dart';
-import '../widgets/nfc_info_button.dart';
+import '../app_colors.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -78,6 +77,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   String _statusMessage = 'NFCタグをタッチしてください';
   final List<String> _debugLog = [];
 
+  /// デバッグパネルの表示フラグ。true にすると画面下部にログパネルが表示される。
+  static const bool _kShowDebugPanel = false;
+
   void _addLog(String msg) {
     if (mounted) {
       setState(() {
@@ -90,10 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     // DEBUG: Listen to raw stream to see what's coming through
-    ref.listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
-      previous,
-      next,
-    ) {
+    ref.listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (previous, next) {
       next.when(
         data: (d) => _addLog('STREAM: ${d.runtimeType}'),
         error: (e, _) => _addLog('STREAM ERR: $e'),
@@ -116,10 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             if (mounted) {
               context.pushNamed(
                 AppRoute.selectUnlock.name,
-                extra: {
-                  'encryptedText': encryptedText,
-                  'capacity': detection.capacity,
-                },
+                extra: {'encryptedText': encryptedText, 'capacity': detection.capacity},
               );
             }
           } else {
@@ -177,42 +173,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     });
 
     // Optional: Listen for URL Detection
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('Portable Sec')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.nfc, size: 80, color: Colors.blue),
-            const SizedBox(height: 24),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: NfcSessionTriggerWidget(
-                    instructionText: _statusMessage,
-                    buttonText: 'NFCタグの読み取りを開始',
-                    onStartSession: (onError) {
-                      if (mounted) {
-                        setState(() {
-                          _statusMessage = 'NFCタグをタッチしてください';
-                        });
-                      }
-                      _addLog('startSession() called');
-                      ref.read(nfcServiceProvider).startSession();
-                    },
-                  ),
-                ),
-                const NfcInfoButton(
-                  message:
-                      'iPhoneやiPadが反応しないNFCタグがあります。このような場合はデータに関わらず本アプリでも扱えません。'
-                      'その際は、NFC Toolsというアプリでタグの初期化を実施の上、書き込みを行ってください。',
-                  url: 'https://apps.apple.com/jp/app/nfc-tools/id1252962749',
-                ),
-              ],
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Spacer(flex: 4),
+          // NFCアイコン（アクセントカラー）
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
             ),
+            child: Icon(Icons.nfc, size: 60, color: AppColors.accent),
+          ),
+          SizedBox(height: (defaultTargetPlatform == TargetPlatform.iOS) ? 72 : 18),
+          NfcSessionTriggerWidget(
+            instructionText: _statusMessage,
+            buttonText: 'NFCタグの読み取りを開始',
+            onStartSession: (onError) {
+              if (mounted) {
+                setState(() {
+                  _statusMessage = 'NFCカードを検知すると読み取り開始します';
+                });
+              }
+              _addLog('startSession() called');
+              ref.read(nfcServiceProvider).startSession();
+            },
+          ),
+          if (_kShowDebugPanel) ...[
             const SizedBox(height: 24),
             // DEBUG LOG (HomeScreen events + Toolkit internal)
             Container(
@@ -221,23 +211,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black87,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.divider, width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '── UI ──',
-                    style: TextStyle(color: Colors.yellow, fontSize: 10),
-                  ),
+                  const Text('── UI ──', style: TextStyle(color: AppColors.accent, fontSize: 10)),
                   Expanded(
                     child: SingleChildScrollView(
                       reverse: true,
                       child: Text(
                         _debugLog.join('\n'),
                         style: const TextStyle(
-                          color: Colors.greenAccent,
+                          color: AppColors.success,
                           fontSize: 10,
                           fontFamily: 'monospace',
                         ),
@@ -246,7 +234,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   ),
                   const Text(
                     '── Toolkit ──',
-                    style: TextStyle(color: Colors.yellow, fontSize: 10),
+                    style: TextStyle(color: AppColors.accent, fontSize: 10),
                   ),
                   Expanded(
                     child: SingleChildScrollView(
@@ -257,7 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           return Text(
                             tkLog.join('\n'),
                             style: const TextStyle(
-                              color: Colors.cyanAccent,
+                              color: Color(0xFF80DEEA), // cyanAccent相当
                               fontSize: 10,
                               fontFamily: 'monospace',
                             ),
@@ -269,31 +257,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 ],
               ),
             ),
+          ],
+          SizedBox(height: (defaultTargetPlatform == TargetPlatform.iOS) ? 24 : 72),
 
-            ElevatedButton.icon(
-              onPressed: () async {
-                final draftRepo = ref.read(wizardDraftRepositoryProvider);
-                final hasDraft = await draftRepo.hasDraft();
+          //・ 新規作成ボタン
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: SizedBox(
+              width: double.infinity,
+              height: 80,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: AppColors.background,
+                ),
+                onPressed: () async {
+                  final draftRepo = ref.read(wizardDraftRepositoryProvider);
+                  final hasDraft = await draftRepo.hasDraft();
 
-                if (context.mounted) {
-                  if (hasDraft) {
-                    _showDraftDialog(context, ref);
-                  } else {
-                    context.goNamed(AppRoute.creationLockType.name);
+                  if (context.mounted) {
+                    if (hasDraft) {
+                      _showDraftDialog(context, ref);
+                    } else {
+                      context.goNamed(AppRoute.creationLockType.name);
+                    }
                   }
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('新しく秘密データを入力してNFCカードに保存する'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
+                },
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.background,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.add, color: AppColors.accent, size: 18),
+                ),
+                label: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: const Text('新しく秘密データを入力してNFCカードに保存する'),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          Spacer(flex: 6),
+        ],
       ),
     );
   }
@@ -303,8 +309,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("下書きが見つかりました"),
-          content: const Text("以前作成したデータの下書きが残っています。\n復元しますか？"),
+          backgroundColor: AppColors.surface,
+          title: const Text("下書きが見つかりました", style: TextStyle(color: AppColors.textPrimary)),
+          content: const Text(
+            "以前作成したデータの下書きが残っています。\n復元しますか？",
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
           actions: [
             TextButton(
               onPressed: () async {
@@ -316,22 +326,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   context.goNamed(AppRoute.creationLockType.name);
                 }
               },
-              child: const Text(
-                "破棄して新規作成",
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text("破棄して新規作成", style: TextStyle(color: AppColors.error)),
             ),
             FilledButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 if (context.mounted) {
-                  context.goNamed(
-                    AppRoute.creationLockType.name,
-                    extra: {'restore': true},
-                  );
+                  context.goNamed(AppRoute.creationLockType.name, extra: {'restore': true});
                 }
               },
-              child: const Text("復元する"),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: AppColors.background,
+              ),
+              child: const Text("復元する", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );

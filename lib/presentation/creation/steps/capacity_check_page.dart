@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nfc_toolkit/nfc_toolkit.dart';
-import '../../../router_provider.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
+
 import '../../../application/providers/creation_providers.dart';
+import '../../../router_provider.dart';
 
 class CapacityCheckPage extends ConsumerStatefulWidget {
   const CapacityCheckPage({super.key});
@@ -20,8 +22,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
   }
 
   void _checkTransition(CreationState? previous, CreationState next) {
-    if (next.step == CreationStep.inputData &&
-        (previous?.step != CreationStep.inputData)) {
+    if (next.step == CreationStep.inputData && (previous?.step != CreationStep.inputData)) {
       context.goNamed(AppRoute.creationInput.name);
     }
   }
@@ -34,9 +35,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
 
     ref.listen(creationProvider, (prev, next) {
       if (next.error != null && next.error != prev?.error) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.error!)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.error!)));
       }
       _checkTransition(prev, next);
     });
@@ -48,7 +47,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
       return NfcSessionAction.success(message: '容量を計測しました ($capacity bytes)');
     });
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text('新規データ作成 (2/5)'),
         leading: IconButton(
@@ -99,38 +98,39 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
     );
   }
 
-  void _showManualSelectDialog(
-    BuildContext context,
-    CreationNotifier notifier,
-  ) {
+  void _showManualSelectDialog(BuildContext context, CreationNotifier notifier) {
     showModalBottomSheet(
+      useSafeArea: true,
       context: context,
       builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text("NTAG213 (137 bytes)"),
-              onTap: () {
-                notifier.selectManualCapacity(137);
-                Navigator.pop(context); // Close bottom sheet
-              },
-            ),
-            ListTile(
-              title: const Text("NTAG215 (492 bytes)"),
-              onTap: () {
-                notifier.selectManualCapacity(492);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text("NTAG216 (868 bytes)"),
-              onTap: () {
-                notifier.selectManualCapacity(868);
-                Navigator.pop(context);
-              },
-            ),
-          ],
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text("NTAG213 (137 bytes)"),
+                onTap: () {
+                  notifier.selectManualCapacity(137);
+                  Navigator.pop(context); // Close bottom sheet
+                },
+              ),
+              ListTile(
+                title: const Text("NTAG215 (492 bytes)"),
+                onTap: () {
+                  notifier.selectManualCapacity(492);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text("NTAG216 (868 bytes)"),
+                onTap: () {
+                  notifier.selectManualCapacity(868);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
         );
       },
     );

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../router_provider.dart';
+
 import '../../../application/providers/creation_providers.dart';
+import '../../../application/services/capacity_calculator.dart';
 import '../../../domain/value_objects/lock_method.dart';
 import '../../../domain/value_objects/secret_data.dart'; // Import SecretData
-import '../../../application/services/capacity_calculator.dart';
-import '../../scan/secret_view_screen.dart'; // Import SecretViewArgs
+import '../../../router_provider.dart';
+import '../../scan/secret_view_screen.dart';
+import '../../app_colors.dart';
+import '../../widgets/appscaffold.dart'; // Import SecretViewArgs
 
 class InputDataPage extends ConsumerStatefulWidget {
   const InputDataPage({super.key});
@@ -102,7 +105,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                         IconButton(
                           icon: const Icon(
                             Icons.check_circle,
-                            color: Colors.blue,
+                            color: AppColors.accent,
                             size: 36,
                           ),
                           onPressed: () {
@@ -126,7 +129,10 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                         ),
                         const Text(
                           "OK",
-                          style: TextStyle(fontSize: 12, color: Colors.blue),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.accent,
+                          ),
                         ),
                       ],
                     ),
@@ -164,7 +170,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
       }
     });
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text('新規データ作成 (3/5)'),
         leading: IconButton(
@@ -203,16 +209,31 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                   items: const [
                     DropdownMenuItem(
                       value: LockType.pattern,
-                      child: Text("パターン"),
+                      child: Text(
+                        "パターン",
+                        style: TextStyle(color: AppColors.accent),
+                      ),
                     ),
-                    DropdownMenuItem(value: LockType.pin, child: Text("PIN")),
+                    DropdownMenuItem(
+                      value: LockType.pin,
+                      child: Text(
+                        "PIN",
+                        style: TextStyle(color: AppColors.accent),
+                      ),
+                    ),
                     DropdownMenuItem(
                       value: LockType.patternAndPin,
-                      child: Text("パターン + PIN"),
+                      child: Text(
+                        "パターン + PIN",
+                        style: TextStyle(color: AppColors.accent),
+                      ),
                     ),
                     DropdownMenuItem(
                       value: LockType.password,
-                      child: Text("パスワード"),
+                      child: Text(
+                        "パスワード",
+                        style: TextStyle(color: AppColors.accent),
+                      ),
                     ),
                   ],
                   onChanged: (val) {
@@ -272,7 +293,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: IconButton(
-                icon: const Icon(Icons.add_circle, color: Colors.blue),
+                icon: const Icon(Icons.add_circle, color: AppColors.accent),
                 iconSize: 48,
                 onPressed: _startAdd,
                 tooltip: '項目を追加',

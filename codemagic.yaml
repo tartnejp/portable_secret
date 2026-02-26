@@ -36,25 +36,25 @@ workflows:
           keychain add-certificates
           xcode-project use-profiles # ← これがないとXcodeに適用されない
           
-      - name: Check 
-        script: |
-          # 適用されたか確認（ログで確認できる）
-          security find-identity -v -p codesigning
-          # export_options.plistの確認
-          cat /Users/builder/export_options.plist
-          # profile
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/
-          for f in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
-            echo "=== $f entitlements ==="
-            security cms -D -i "$f" | plutil -extract Entitlements xml1 -o - -
-          done
+      # - name: Check 
+      #   script: |
+      #     # 適用されたか確認（ログで確認できる）
+      #     security find-identity -v -p codesigning
+      #     # export_options.plistの確認
+      #     cat /Users/builder/export_options.plist
+      #     # profile
+      #     ls ~/Library/MobileDevice/Provisioning\ Profiles/
+      #     for f in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+      #       echo "=== $f entitlements ==="
+      #       security cms -D -i "$f" | plutil -extract Entitlements xml1 -o - -
+      #     done
 
       - name: Build IPA for App Store / TestFlight
         script: |
           # Codemagicが自動生成したexport_options.plistを使用してIPAをビルド
           flutter build ipa --release \
           --export-options-plist=/Users/builder/export_options.plist \
-          --verbose 2>&1 | grep -E "error:|Provisioning|Signing|exportArchive"
+          # --verbose 2>&1 | grep -E "error:|Provisioning|Signing|exportArchive"
 
     artifacts:
       - build/ios/ipa/*.ipa

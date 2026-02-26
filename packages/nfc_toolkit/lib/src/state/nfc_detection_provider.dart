@@ -1,15 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/nfc_detection.dart';
-import '../nfc_service.dart';
-import '../nfc_data.dart';
-import 'nfc_session.dart';
-import 'nfc_interest_registry.dart';
-import 'nfc_generic_handler.dart';
-import 'nfc_debug_log.dart';
 
+import '../core/nfc_detection.dart';
+import '../nfc_data.dart';
+import '../nfc_service.dart';
 import '../providers/nfc_detection_registry.dart';
 import '../riverpod/nfc_providers.dart';
+import 'nfc_debug_log.dart';
+import 'nfc_error_handler.dart';
+import 'nfc_generic_handler.dart';
+import 'nfc_interest_registry.dart';
+import 'nfc_session.dart';
 
 /// Global provider that listens to NFC tags and yields relevant [NfcDetection] events.
 ///
@@ -19,84 +21,71 @@ import '../riverpod/nfc_providers.dart';
 /// 3. Consults [NfcInterestRegistry] to select the best matching type.
 /// 4. Yields exactly ONE event per scan (the best match with the highest priority).
 /// 5. If no interested type matches, notifies [nfcGenericHandlerProvider] instead.
-final StreamProvider<NfcDetection> nfcDetectionStreamProvider =
-    StreamProvider<NfcDetection>((ref) async* {
-      final registry = ref.watch(nfcDetectionRegistryProvider);
-      final nfcService = ref.watch(nfcServiceProvider);
-      final interestRegistry = ref.read(nfcInterestRegistryProvider.notifier);
+final StreamProvider<NfcDetection> nfcDetectionStreamProvider = StreamProvider<NfcDetection>((
+  ref,
+) async* {
+  final registry = ref.watch(nfcDetectionRegistryProvider);
+  final nfcService = ref.watch(nfcServiceProvider);
+  final interestRegistry = ref.read(nfcInterestRegistryProvider.notifier);
 
-      // Set internal logger for debugging
-      nfcService.debugLogger = (msg) {
-        ref.read(nfcDebugLogProvider.notifier).add('[SVC] $msg');
-      };
+  // Set internal logger for debugging
+  nfcService.debugLogger = (msg) {
+    ref.read(nfcDebugLogProvider.notifier).add('[SVC] $msg');
+  };
 
-      // Check for initial tag (App Launch)
-      final initialTag = await nfcService.getInitialTag();
+  // Check for initial tag (App Launch)
+  final initialTag = await nfcService.getInitialTag();
 
-      if (initialTag != null) {
-        final result = await _detectAndDispatch(
-          registry,
-          interestRegistry,
-          ref,
-          initialTag,
-        );
-        if (result != null) {
-          yield result;
-        }
-      } else {
-        yield const IdleDetection();
-      }
+  if (initialTag != null) {
+    final result = await _detectAndDispatch(registry, interestRegistry, ref, initialTag);
+    if (result != null) {
+      yield result;
+    }
+  } else {
+    yield const IdleDetection();
+  }
 
-      // Listen to the stream of raw NFC data
-      await for (final nfcData in nfcService.backgroundTagStream) {
-        if (nfcData == null) {
-          yield const IdleDetection();
-          continue;
-        }
+  // Listen to the stream of raw NFC data
+  await for (final nfcData in nfcService.backgroundTagStream) {
+    if (nfcData == null) {
+      yield const IdleDetection();
+      continue;
+    }
 
-        // DEBUG: Log NfcData state before dispatch
-        ref
-            .read(nfcDebugLogProvider.notifier)
-            .add(
-              'TAG: ndef=${nfcData.ndef != null}, '
-              'cached=${nfcData.cachedMessage != null}',
-            );
-
-        // Check for read errors set during eager read in _handleBackgroundTag
-        if (nfcData.readError != null) {
-          ref
-              .read(nfcDebugLogProvider.notifier)
-              .add('TAG readError before dispatch: ${nfcData.readError}');
-          yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
-          continue;
-        }
-
-        final result = await _detectAndDispatch(
-          registry,
-          interestRegistry,
-          ref,
-          nfcData,
+    // DEBUG: Log NfcData state before dispatch
+    ref
+        .read(nfcDebugLogProvider.notifier)
+        .add(
+          'TAG: ndef=${nfcData.ndef != null}, '
+          'cached=${nfcData.cachedMessage != null}',
         );
 
-        // DEBUG: Check if readError was set DURING detect()
-        if (nfcData.readError != null) {
-          ref
-              .read(nfcDebugLogProvider.notifier)
-              .add('TAG readError after dispatch: ${nfcData.readError}');
-        }
+    // Check for read errors set during eager read in _handleBackgroundTag
+    if (nfcData.readError != null) {
+      ref
+          .read(nfcDebugLogProvider.notifier)
+          .add('TAG readError before dispatch: ${nfcData.readError}');
+      yield NfcError(message: "読み取りエラー: ${nfcData.readError}");
+      continue;
+    }
 
-        if (result != null) {
-          ref
-              .read(nfcDebugLogProvider.notifier)
-              .add('DISPATCH result: ${result.runtimeType}');
-          yield result;
-        } else {
-          ref
-              .read(nfcDebugLogProvider.notifier)
-              .add('DISPATCH: no result (Generic or suppressed)');
-        }
-      }
-    });
+    final result = await _detectAndDispatch(registry, interestRegistry, ref, nfcData);
+
+    // DEBUG: Check if readError was set DURING detect()
+    if (nfcData.readError != null) {
+      ref
+          .read(nfcDebugLogProvider.notifier)
+          .add('TAG readError after dispatch: ${nfcData.readError}');
+    }
+
+    if (result != null) {
+      ref.read(nfcDebugLogProvider.notifier).add('DISPATCH result: ${result.runtimeType}');
+      yield result;
+    } else {
+      ref.read(nfcDebugLogProvider.notifier).add('DISPATCH: no result (Generic or suppressed)');
+    }
+  }
+});
 
 /// Runs all registered detection factories against [nfcData] and selects
 /// the best event to dispatch based on [NfcInterestRegistry] priorities.
@@ -139,7 +128,7 @@ Future<NfcDetection?> _detectAndDispatch(
   final frontScreenIds = <int>{};
   for (final entry in _activeRegistrations.entries) {
     final ctx = entry.value.context;
-    if (ctx is Element && ctx.mounted) {
+    if (ctx.mounted && ctx is Element) {
       final isCurrent = ModalRoute.of(ctx)?.isCurrent ?? false;
       if (isCurrent) {
         frontScreenIds.add(entry.key);
@@ -151,8 +140,7 @@ Future<NfcDetection?> _detectAndDispatch(
   final frontMatchedTypes = <Type>[];
   for (final type in matchedTypes) {
     final registeredScreenIds = interestRegistry.getScreenIds(type);
-    if (registeredScreenIds != null &&
-        registeredScreenIds.any(frontScreenIds.contains)) {
+    if (registeredScreenIds != null && registeredScreenIds.any(frontScreenIds.contains)) {
       frontMatchedTypes.add(type);
     }
   }
@@ -162,9 +150,7 @@ Future<NfcDetection?> _detectAndDispatch(
 
   if (bestType != null) {
     // 4a. Found an interested type → yield the corresponding detection
-    final bestDetection = matchedDetections.firstWhere(
-      (d) => d.runtimeType == bestType,
-    );
+    final bestDetection = matchedDetections.firstWhere((d) => d.runtimeType == bestType);
 
     return bestDetection;
   } else {
@@ -174,8 +160,7 @@ Future<NfcDetection?> _detectAndDispatch(
     // Check if any frontmost screen is listening for GenericNfcDetected
     final genericScreenIds = interestRegistry.getScreenIds(GenericNfcDetected);
     final hasFrontGenericInterest =
-        genericScreenIds != null &&
-        genericScreenIds.any(frontScreenIds.contains);
+        genericScreenIds != null && genericScreenIds.any(frontScreenIds.contains);
 
     if (hasFrontGenericInterest) {
       // A frontmost screen is explicitly listening via listenNfcDetection<GenericNfcDetected>
@@ -229,10 +214,7 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
       _activeRegistrations[screenId] = _RegistrationInfo(T, context);
     });
 
-    listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
-      previous,
-      next,
-    ) {
+    listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (previous, next) {
       // Check if context is still valid (widget still mounted)
       if (context is Element && !context.mounted) {
         // Context is no longer valid — clean up registration
@@ -255,26 +237,26 @@ extension NfcDetectionWidgetRefExtension on WidgetRef {
 
                 final nfcService = read(nfcServiceProvider);
                 if (action.isSuccess) {
-                  await nfcService.stopSession(
-                    alertMessage: action.message ?? '完了しました',
-                  );
+                  await nfcService.stopSession(alertMessage: action.message ?? '完了しました');
                   action.onComplete?.call();
                 } else if (action.isNone) {
                   await nfcService.stopSession();
                   action.onComplete?.call();
                 } else {
-                  await nfcService.stopSession(
-                    errorMessage: action.message ?? 'エラーが発生しました',
-                  );
+                  // Error action
+                  // On iOS, display error message on scan sheet
+                  await nfcService.stopSession(errorMessage: action.message ?? 'エラーが発生しました');
+                  // On Android, notify error handler to show overlay
+                  if (defaultTargetPlatform != TargetPlatform.iOS) {
+                    read(nfcErrorHandlerProvider.notifier).notify(action.message ?? 'エラーが発生しました');
+                  }
                   action.onComplete?.call();
                 }
               } catch (e, stackTrace) {
                 if (onError != null) {
                   onError(e, stackTrace);
                 }
-                await read(
-                  nfcServiceProvider,
-                ).stopSession(errorMessage: e.toString());
+                await read(nfcServiceProvider).stopSession(errorMessage: e.toString());
               }
             });
           }

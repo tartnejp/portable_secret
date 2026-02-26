@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter/foundation.dart';
 import '../../nfc_toolkit.dart';
+import 'nfc_info_button.dart';
 
 /// A smart wrapper widget that handles the platform differences for NFC sessions.
 /// - On Android, it automatically starts the required provider mechanism and shows static test.
@@ -28,12 +29,10 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<NfcSessionTriggerWidget> createState() =>
-      _NfcSessionTriggerWidgetState();
+  ConsumerState<NfcSessionTriggerWidget> createState() => _NfcSessionTriggerWidgetState();
 }
 
-class _NfcSessionTriggerWidgetState
-    extends ConsumerState<NfcSessionTriggerWidget> {
+class _NfcSessionTriggerWidgetState extends ConsumerState<NfcSessionTriggerWidget> {
   bool _hasAutoStarted = false;
 
   @override
@@ -96,30 +95,61 @@ class _NfcSessionTriggerWidgetState
       return NfcSessionAction.none();
     });
 
+    // iOS: Show instruction text and button with View icon
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            widget.instructionText,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _triggerIosSession,
-            child: Text(widget.buttonText),
-          ),
-        ],
+      return Padding(
+        padding: const EdgeInsets.only(left: 40),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  minimumSize: const Size.fromHeight(80),
+                ),
+                onPressed: _triggerIosSession,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    //・Viewアイコン
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1A1A1A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.visibility, color: Color(0xFFFFD600), size: 18),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(widget.buttonText),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 40, child: NfcInfoButton()),
+          ],
+        ),
       );
     }
 
-    // Android / other platforms: Display instruction text only
-    return Text(
-      widget.instructionText,
-      textAlign: TextAlign.center,
-      style: const TextStyle(fontSize: 16),
+    // Android / other platforms: Display instruction text with View icon
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Container(
+        //   padding: const EdgeInsets.all(6),
+        //   decoration: const BoxDecoration(color: Color(0xFFFFD600), shape: BoxShape.circle),
+        //   child: const Icon(Icons.visibility, color: Color(0xFFFFD600), size: 18),
+        // ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            widget.instructionText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 }

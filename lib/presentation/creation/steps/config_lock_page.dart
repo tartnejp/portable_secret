@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../router_provider.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
+
 import '../../../application/providers/creation_providers.dart';
 import '../../../domain/value_objects/lock_method.dart';
+import '../../../router_provider.dart';
 import '../../widgets/pattern_lock.dart';
 
 class ConfigLockPage extends ConsumerWidget {
@@ -15,14 +17,11 @@ class ConfigLockPage extends ConsumerWidget {
     final notifier = ref.read(creationProvider.notifier);
 
     ref.listen(creationProvider, (prev, next) {
-      if (next.step == CreationStep.write &&
-          (prev?.step != CreationStep.write)) {
+      if (next.step == CreationStep.write && (prev?.step != CreationStep.write)) {
         context.goNamed(AppRoute.creationWrite.name);
       }
       if (next.error != null && next.error != prev?.error) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.error!)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.error!)));
       }
     });
 
@@ -39,7 +38,7 @@ class ConfigLockPage extends ConsumerWidget {
       instruction = "確認のため、もう一度入力してください";
     }
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('新規データ作成 (4/5)'),
@@ -49,8 +48,7 @@ class ConfigLockPage extends ConsumerWidget {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
                   // If in second stage of Pattern+Pin, back goes to first stage
-                  if (state.selectedType == LockType.patternAndPin &&
-                      state.isLockSecondStage) {
+                  if (state.selectedType == LockType.patternAndPin && state.isLockSecondStage) {
                     notifier
                         .retryLockInput(); // This resets current stage, but we need to go back to stage 1?
                     // Actually retryLockInput resets verifying state.
@@ -79,42 +77,26 @@ class ConfigLockPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 24),
-              Text(
-                instruction,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(instruction, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              if (state.isConfirming)
-                const Text(
-                  "入力を間違えると最初からやり直しになります",
-                  style: TextStyle(color: Colors.red),
-                ),
 
               const SizedBox(height: 24),
 
               // Input Widget based on type
               if (state.selectedType == LockType.pin ||
-                  (state.selectedType == LockType.patternAndPin &&
-                      state.isLockSecondStage))
+                  (state.selectedType == LockType.patternAndPin && state.isLockSecondStage))
                 _buildPinInput(context, state, notifier)
               else if (state.selectedType == LockType.password)
                 _buildPasswordInput(notifier)
               else if (state.selectedType == LockType.pattern ||
-                  (state.selectedType == LockType.patternAndPin &&
-                      !state.isLockSecondStage))
+                  (state.selectedType == LockType.patternAndPin && !state.isLockSecondStage))
                 _buildPatternInput(context, state, notifier, ref)
               else
                 const Center(child: Text("この方式の入力UIは未実装です")),
 
               const Spacer(),
 
-              ElevatedButton(
-                onPressed: notifier.nextFromLockConfig,
-                child: const Text("次へ"),
-              ),
+              // ElevatedButton(onPressed: notifier.nextFromLockConfig, child: const Text("次へ")),
               const SizedBox(height: 32),
             ],
           ),
@@ -166,29 +148,20 @@ class ConfigLockPage extends ConsumerWidget {
             notifier.nextFromLockConfig();
           },
           onError: (msg) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(msg)));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
           },
           dimension: 3,
         ),
         const SizedBox(height: 10),
         if (state.isConfirming)
-          TextButton(
-            onPressed: notifier.retryLockInput,
-            child: const Text("やり直す"),
-          )
+          TextButton(onPressed: notifier.retryLockInput, child: const Text("やり直す"))
         else
           Text("入力: ${state.lockInput.length} 点"),
       ],
     );
   }
 
-  Widget _buildPinInput(
-    BuildContext context,
-    CreationState state,
-    CreationNotifier notifier,
-  ) {
+  Widget _buildPinInput(BuildContext context, CreationState state, CreationNotifier notifier) {
     return Column(
       children: [
         Container(
@@ -225,10 +198,7 @@ class ConfigLockPage extends ConsumerWidget {
                   onPressed: () {
                     if (state.lockInput.isNotEmpty) {
                       notifier.updateLockInput(
-                        state.lockInput.substring(
-                          0,
-                          state.lockInput.length - 1,
-                        ),
+                        state.lockInput.substring(0, state.lockInput.length - 1),
                       );
                     }
                   },
@@ -241,17 +211,12 @@ class ConfigLockPage extends ConsumerWidget {
               return OutlinedButton(
                 onPressed: () {
                   if (state.lockInput.length < 20) {
-                    notifier.updateLockInput(
-                      state.lockInput + number.toString(),
-                    );
+                    notifier.updateLockInput(state.lockInput + number.toString());
                   }
                 },
                 child: Text(
                   "$number",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               );
             },

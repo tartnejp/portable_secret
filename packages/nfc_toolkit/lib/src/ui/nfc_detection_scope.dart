@@ -1,7 +1,11 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../core/nfc_detection.dart';
+import '../state/nfc_error_handler.dart';
 import '../state/nfc_generic_handler.dart';
 
 /// A wrapper widget that listens to [nfcGenericHandlerProvider] and displays
@@ -41,11 +45,15 @@ class NfcDetectionScope extends ConsumerStatefulWidget {
 }
 
 class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
-  // Queue state
+  // Queue state for generic messages
   final List<String> _messageQueue = [];
   bool _isProcessQueueRunning = false;
   String? _activeMessage;
   Timer? _overlayTimer;
+
+  // Error overlay state
+  String? _activeErrorMessage;
+  Timer? _errorOverlayTimer;
 
   // Helper to get current route name safely
   String? _getCurrentRoute(BuildContext context) {
@@ -60,12 +68,46 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
     final currentRoute = _getCurrentRoute(context);
 
     // Route-based suppression
-    if (currentRoute != null &&
-        widget.disableGenericDetectionRoutes.contains(currentRoute)) {
+    if (currentRoute != null && widget.disableGenericDetectionRoutes.contains(currentRoute)) {
       return; // Suppress
     }
 
     _addToQueue(message);
+  }
+
+  void _onError(String errorMessage) {
+    // Only show error overlay on Android
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return;
+    }
+
+    // Cancel any existing error timer
+    _errorOverlayTimer?.cancel();
+
+    // Show error message
+    if (mounted) {
+      setState(() {
+        _activeErrorMessage = errorMessage;
+      });
+    }
+
+    // Auto-dismiss after 2 seconds
+    _errorOverlayTimer = Timer(widget.overlayDuration, () {
+      if (mounted) {
+        setState(() {
+          _activeErrorMessage = null;
+        });
+      }
+    });
+  }
+
+  void _dismissError() {
+    _errorOverlayTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _activeErrorMessage = null;
+      });
+    }
   }
 
   void _addToQueue(String message) {
@@ -113,18 +155,25 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
   @override
   void dispose() {
     _overlayTimer?.cancel();
+    _errorOverlayTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     // Listen to Generic detections (delivered directly, not via the main stream)
-    ref.listen<GenericNfcDetected?>(nfcGenericHandlerProvider, (
-      previous,
-      next,
-    ) {
+    ref.listen<GenericNfcDetected?>(nfcGenericHandlerProvider, (previous, next) {
       if (next != null) {
         _onGenericDetection(next);
+      }
+    });
+
+    // Listen to error messages for Android overlay
+    ref.listen<String?>(nfcErrorHandlerProvider, (previous, next) {
+      if (next != null) {
+        _onError(next);
+        // Clear the provider state after consuming
+        ref.read(nfcErrorHandlerProvider.notifier).clear();
       }
     });
 
@@ -132,11 +181,13 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
       children: [
         widget.child,
         if (_activeMessage != null)
+          Positioned(left: 24, right: 24, bottom: 50, child: _buildOverlay(_activeMessage!)),
+        if (_activeErrorMessage != null)
           Positioned(
             left: 24,
             right: 24,
             bottom: 50,
-            child: _buildOverlay(_activeMessage!),
+            child: _buildErrorOverlay(_activeErrorMessage!),
           ),
       ],
     );
@@ -165,6 +216,48 @@ class _NfcDetectionScopeState extends ConsumerState<NfcDetectionScope> {
                 ),
                 textAlign: TextAlign.center,
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorOverlay(String message) {
+    return Center(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            key: ValueKey('error_$message'),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade700,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _dismissError,
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
+                ),
+              ],
             ),
           ),
         ),

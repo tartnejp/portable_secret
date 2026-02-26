@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
 import 'package:go_router/go_router.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
+
 import '../../application/providers/encryption_providers.dart';
-import '../../router_provider.dart';
 import '../../domain/value_objects/lock_method.dart';
+import '../../router_provider.dart';
+import '../widgets/unlock_failure_overlay.dart';
 import 'secret_view_screen.dart'; // Import for SecretViewArgs
 
 class UnlockPasswordScreen extends ConsumerStatefulWidget {
@@ -22,8 +26,7 @@ class UnlockPasswordScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<UnlockPasswordScreen> createState() =>
-      _UnlockPasswordScreenState();
+  ConsumerState<UnlockPasswordScreen> createState() => _UnlockPasswordScreenState();
 }
 
 class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
@@ -53,9 +56,7 @@ class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
       if (mounted) {
         final args = SecretViewArgs(
           secret: secret,
-          lockType: widget.lockType != null
-              ? LockType.values[widget.lockType!]
-              : LockType.password,
+          lockType: widget.lockType != null ? LockType.values[widget.lockType!] : LockType.password,
           isManualUnlockRequired: widget.isManualUnlockRequired,
           capacity: widget.capacity ?? 0,
         );
@@ -63,9 +64,7 @@ class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('ロック解除に失敗しました')));
+        showUnlockFailureOverlay(context, lockMethodHint: 'パスワード');
       }
     } finally {
       if (mounted) {
@@ -78,16 +77,13 @@ class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('パスワードで解除')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text(
-              'パスワードを入力してロックを解除してください',
-              style: TextStyle(fontSize: 16),
-            ),
+            const Text('パスワードを入力してロックを解除してください', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 24),
             TextField(
               controller: _passwordController,
@@ -97,9 +93,7 @@ class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
                 labelText: 'パスワード',
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureText ? Icons.visibility : Icons.visibility_off,
-                  ),
+                  icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
                   onPressed: () {
                     setState(() {
                       _obscureText = !_obscureText;
@@ -110,12 +104,8 @@ class _UnlockPasswordScreenState extends ConsumerState<UnlockPasswordScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: (_isLoading || _passwordController.text.isEmpty)
-                  ? null
-                  : _unlock,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
+              onPressed: (_isLoading || _passwordController.text.isEmpty) ? null : _unlock,
+              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
               child: _isLoading
                   ? const SizedBox(
                       width: 24,

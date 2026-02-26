@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
 import 'package:go_router/go_router.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
+
 import '../../application/providers/encryption_providers.dart';
-import '../../router_provider.dart';
 import '../../domain/value_objects/lock_method.dart';
+import '../../router_provider.dart';
+import '../widgets/unlock_failure_overlay.dart';
 import 'secret_view_screen.dart'; // Import for SecretViewArgs
 
 class UnlockPinScreen extends ConsumerStatefulWidget {
@@ -51,7 +55,11 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
     if (widget.encryptedText == null) return;
     if (_inputPin.isEmpty) return;
 
+    final currentPin = _inputPin;
+
+    // Clear input on unlock button tap
     setState(() {
+      _inputPin = "";
       _isLoading = true;
     });
 
@@ -59,9 +67,9 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
       final bytes = base64Decode(widget.encryptedText!);
       final service = ref.read(encryptionServiceProvider);
 
-      String inputSecret = _inputPin;
+      String inputSecret = currentPin;
       if (widget.pattern != null) {
-        inputSecret = "${widget.pattern}:$_inputPin";
+        inputSecret = "${widget.pattern}:$currentPin";
       }
 
       final secret = await service.decrypt(bytes, inputSecret);
@@ -79,9 +87,9 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('ロック解除に失敗しました')));
+        // Determine hint based on whether pattern is used
+        final hint = widget.pattern != null ? 'PINまたはパターン' : 'PIN';
+        showUnlockFailureOverlay(context, lockMethodHint: hint);
       }
     } finally {
       if (mounted) {
@@ -94,7 +102,7 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('PINで解除')),
       body: Column(
         children: [
@@ -146,13 +154,8 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
                   if (index == 10) number = 0;
 
                   return OutlinedButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => _onDigitPress(number.toString()),
-                    child: Text(
-                      "$number",
-                      style: const TextStyle(fontSize: 24),
-                    ),
+                    onPressed: _isLoading ? null : () => _onDigitPress(number.toString()),
+                    child: Text("$number", style: const TextStyle(fontSize: 24)),
                   );
                 },
               ),
@@ -162,9 +165,7 @@ class _UnlockPinScreenState extends ConsumerState<UnlockPinScreen> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: (_isLoading || _inputPin.isEmpty) ? null : _unlock,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
+              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
               child: _isLoading
                   ? const SizedBox(
                       width: 24,

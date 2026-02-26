@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nfc_toolkit/nfc_toolkit.dart';
-import '../../../router_provider.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
+
 import '../../../application/providers/creation_providers.dart';
+import '../../../router_provider.dart';
 
 class WriteTagPage extends ConsumerStatefulWidget {
   const WriteTagPage({super.key});
@@ -35,7 +37,7 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
       }
     });
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text('新規データ作成 (5/5)'),
         leading: IconButton(
@@ -59,9 +61,7 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
                 instructionText: "NFCカードをタッチしてください\n(書き込み待機中...)",
                 buttonText: "書き込み開始",
                 onStartSession: (onError) {
-                  ref
-                      .read(creationProvider.notifier)
-                      .writeToNfc(onError: onError);
+                  ref.read(creationProvider.notifier).writeToNfc(onError: onError);
                 },
               ),
               if (state.error != null)

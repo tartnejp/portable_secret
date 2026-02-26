@@ -87,35 +87,102 @@ class _PatternLockState extends State<PatternLock> {
 
   void _handleTouch(Offset localPosition) {
     final size = const Size(300, 300);
-    // Fixed size for now, should be layout builder
-    // Actually, CustomPainter size fits parent. But GestureDetector need size.
-    // Let's assume size is available via LayoutBuilder or fixed.
-    // For simplicity, passing fixed size 300x300 in build.
-
     final cellWidth = size.width / widget.dimension;
     final cellHeight = size.height / widget.dimension;
 
-    int col = (localPosition.dx ~/ cellWidth);
-    int row = (localPosition.dy ~/ cellHeight);
-
-    if (col < 0 ||
-        col >= widget.dimension ||
-        row < 0 ||
-        row >= widget.dimension) {
-      return;
+    // Calculate all point centers
+    final centers = <int, Offset>{};
+    for (int i = 0; i < widget.dimension * widget.dimension; i++) {
+      int row = i ~/ widget.dimension;
+      int col = i % widget.dimension;
+      centers[i] = Offset(col * cellWidth + cellWidth / 2, row * cellHeight + cellHeight / 2);
     }
 
-    int index = row * widget.dimension + col;
+    // Use 2x pointRadius as the touch threshold - only select if touch is within the extended circle
+    final touchThreshold = widget.pointRadius * 2;
 
-    // Check if point is close to center of cell (optional, but better UX)
-    // For now, if within cell, accept it.
+    // Find the closest point that the touch position has actually passed through
+    int? closestIndex;
+    double closestDistance = double.infinity;
 
-    if (!_selectedPoints.contains(index)) {
-      setState(() {
-        _selectedPoints.add(index);
-      });
-      widget.onChanged(_selectedPoints.join());
+    for (int i = 0; i < widget.dimension * widget.dimension; i++) {
+      if (_selectedPoints.contains(i)) continue;
+      final center = centers[i]!;
+      final distance = (localPosition - center).distance;
+      // Only consider points where touch is within the circle (pointRadius)
+      if (distance <= touchThreshold && distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = i;
+      }
     }
+
+    if (closestIndex != null) {
+      _selectPoint(closestIndex, centers);
+    }
+  }
+
+  void _selectPoint(int index, Map<int, Offset> centers) {
+    if (_selectedPoints.contains(index)) return;
+
+    setState(() {
+      // Add intermediate points between last selected point and new point
+      if (_selectedPoints.isNotEmpty) {
+        int lastPoint = _selectedPoints.last;
+        List<int> intermediate = _getIntermediatePoints(lastPoint, index);
+        for (int point in intermediate) {
+          if (!_selectedPoints.contains(point)) {
+            _selectedPoints.add(point);
+          }
+        }
+      }
+      _selectedPoints.add(index);
+    });
+    widget.onChanged(_selectedPoints.join());
+  }
+
+  /// Get intermediate points between two points on a straight line
+  /// (horizontal, vertical, or diagonal)
+  List<int> _getIntermediatePoints(int from, int to) {
+    if (from == to) return [];
+
+    int fromRow = from ~/ widget.dimension;
+    int fromCol = from % widget.dimension;
+    int toRow = to ~/ widget.dimension;
+    int toCol = to % widget.dimension;
+
+    int rowDiff = toRow - fromRow;
+    int colDiff = toCol - fromCol;
+
+    if (rowDiff == 0 && colDiff == 0) return [];
+
+    // Check if points are on a valid line:
+    // - Horizontal: rowDiff == 0
+    // - Vertical: colDiff == 0
+    // - Diagonal: abs(rowDiff) == abs(colDiff)
+    bool isHorizontal = rowDiff == 0;
+    bool isVertical = colDiff == 0;
+    bool isDiagonal = rowDiff.abs() == colDiff.abs();
+
+    if (!isHorizontal && !isVertical && !isDiagonal) {
+      return []; // Not on a straight line
+    }
+
+    List<int> intermediate = [];
+
+    int rowStep = rowDiff == 0 ? 0 : (rowDiff > 0 ? 1 : -1);
+    int colStep = colDiff == 0 ? 0 : (colDiff > 0 ? 1 : -1);
+
+    int currentRow = fromRow + rowStep;
+    int currentCol = fromCol + colStep;
+
+    while (currentRow != toRow || currentCol != toCol) {
+      int pointIndex = currentRow * widget.dimension + currentCol;
+      intermediate.add(pointIndex);
+      currentRow += rowStep;
+      currentCol += colStep;
+    }
+
+    return intermediate;
   }
 }
 
@@ -159,10 +226,7 @@ class _PatternPainter extends CustomPainter {
     for (int i = 0; i < dimension * dimension; i++) {
       int row = i ~/ dimension;
       int col = i % dimension;
-      final center = Offset(
-        col * cellWidth + cellWidth / 2,
-        row * cellHeight + cellHeight / 2,
-      );
+      final center = Offset(col * cellWidth + cellWidth / 2, row * cellHeight + cellHeight / 2);
       centers[i] = center;
 
       canvas.drawCircle(
@@ -176,19 +240,11 @@ class _PatternPainter extends CustomPainter {
 
     // Draw Lines
     for (int i = 0; i < selectedPoints.length - 1; i++) {
-      canvas.drawLine(
-        centers[selectedPoints[i]]!,
-        centers[selectedPoints[i + 1]]!,
-        paintLine,
-      );
+      canvas.drawLine(centers[selectedPoints[i]]!, centers[selectedPoints[i + 1]]!, paintLine);
     }
 
     if (selectedPoints.isNotEmpty && currentDragPos != null) {
-      canvas.drawLine(
-        centers[selectedPoints.last]!,
-        currentDragPos!,
-        paintLine,
-      );
+      canvas.drawLine(centers[selectedPoints.last]!, currentDragPos!, paintLine);
     }
   }
 

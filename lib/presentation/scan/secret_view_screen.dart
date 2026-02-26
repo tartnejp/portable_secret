@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../router_provider.dart';
-import '../../domain/value_objects/secret_data.dart';
-import '../../domain/value_objects/lock_method.dart';
+
 import '../../application/providers/creation_providers.dart';
+import '../../domain/value_objects/lock_method.dart';
+import '../../domain/value_objects/secret_data.dart';
+import '../../router_provider.dart';
 
 // Define arguments class for type safety
 class SecretViewArgs {
@@ -47,10 +49,7 @@ class SecretViewScreen extends ConsumerWidget {
         },
         child: Text(
           value,
-          style: const TextStyle(
-            color: Colors.blue,
-            decoration: TextDecoration.underline,
-          ),
+          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
         ),
       );
     } else {
@@ -61,7 +60,7 @@ class SecretViewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final secret = args.secret;
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text('復号された情報'),
         automaticallyImplyLeading: false, // AppBarの戻るボタンを非表示

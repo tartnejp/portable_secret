@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
 import 'package:go_router/go_router.dart';
-import '../widgets/pattern_lock.dart';
+import 'package:portable_sec/presentation/widgets/appscaffold.dart';
+
 import '../../application/providers/encryption_providers.dart';
-import '../../router_provider.dart';
 import '../../domain/value_objects/lock_method.dart';
+import '../../router_provider.dart';
+import '../widgets/pattern_lock.dart';
+import '../widgets/unlock_failure_overlay.dart';
 import 'secret_view_screen.dart'; // Import for SecretViewArgs
 
 class UnlockPatternScreen extends ConsumerStatefulWidget {
@@ -23,8 +27,7 @@ class UnlockPatternScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<UnlockPatternScreen> createState() =>
-      _UnlockPatternScreenState();
+  ConsumerState<UnlockPatternScreen> createState() => _UnlockPatternScreenState();
 }
 
 class _UnlockPatternScreenState extends ConsumerState<UnlockPatternScreen> {
@@ -40,6 +43,11 @@ class _UnlockPatternScreenState extends ConsumerState<UnlockPatternScreen> {
 
   Future<void> _onPatternComplete(String pattern) async {
     if (widget.encryptedText == null) return;
+
+    // Clear pattern after input completion
+    setState(() {
+      _pattern = "";
+    });
 
     // Pattern+PINの場合の分岐
     // LockType.patternAndPin (index 3)
@@ -83,9 +91,7 @@ class _UnlockPatternScreenState extends ConsumerState<UnlockPatternScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('ロック解除に失敗しました')));
+        showUnlockFailureOverlay(context, lockMethodHint: 'パターン');
       }
     } finally {
       if (mounted) {
@@ -98,7 +104,7 @@ class _UnlockPatternScreenState extends ConsumerState<UnlockPatternScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(title: const Text('パターンで解除')),
       body: Column(
         children: [
