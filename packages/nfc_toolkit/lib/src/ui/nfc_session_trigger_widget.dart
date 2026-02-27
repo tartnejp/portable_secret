@@ -20,19 +20,25 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
   /// The function to execute to initiate the NFC session (e.g., resetSession or startWrite).
   /// It receives a callback to handle errors and timeouts, which it should pass to the underlying nfc_service.
   final void Function(void Function(String) onError)? onStartSession;
+  final bool isHighlighted;
+  final VoidCallback? onLongPress;
 
   const NfcSessionTriggerWidget({
     super.key,
     required this.instructionText,
     required this.buttonText,
     required this.onStartSession,
+    this.isHighlighted = false,
+    this.onLongPress,
   });
 
   @override
-  ConsumerState<NfcSessionTriggerWidget> createState() => _NfcSessionTriggerWidgetState();
+  ConsumerState<NfcSessionTriggerWidget> createState() =>
+      _NfcSessionTriggerWidgetState();
 }
 
-class _NfcSessionTriggerWidgetState extends ConsumerState<NfcSessionTriggerWidget> {
+class _NfcSessionTriggerWidgetState
+    extends ConsumerState<NfcSessionTriggerWidget> {
   bool _hasAutoStarted = false;
 
   @override
@@ -95,61 +101,88 @@ class _NfcSessionTriggerWidgetState extends ConsumerState<NfcSessionTriggerWidge
       return NfcSessionAction.none();
     });
 
+    final Color accentColor = Theme.of(context).colorScheme.primary;
+    final Color onAccentColor = Theme.of(context).colorScheme.onPrimary;
+    final Color surfaceColor = Theme.of(context).colorScheme.surface;
+
+    // Common Icon decoration used in buttons/containers
+    Widget buildIcon() {
+      return Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(color: onAccentColor, shape: BoxShape.circle),
+        child: Icon(Icons.visibility, color: accentColor, size: 18),
+      );
+    }
+
     // iOS: Show instruction text and button with View icon
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return Padding(
-        padding: const EdgeInsets.only(left: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Row(
           children: [
             Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  minimumSize: const Size.fromHeight(80),
-                ),
-                onPressed: _triggerIosSession,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    //・Viewアイコン
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1A1A1A),
-                        shape: BoxShape.circle,
+              child: SizedBox(
+                height: 80,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: widget.isHighlighted
+                        ? accentColor.withValues(alpha: 0.5)
+                        : accentColor,
+                    foregroundColor: onAccentColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    alignment: Alignment.centerLeft,
+                  ),
+                  onPressed: _triggerIosSession,
+                  onLongPress: widget.onLongPress,
+                  child: Row(
+                    children: [
+                      buildIcon(),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          widget.buttonText,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      child: const Icon(Icons.visibility, color: Color(0xFFFFD600), size: 18),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(widget.buttonText),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
+            const SizedBox(width: 8),
             const SizedBox(width: 40, child: NfcInfoButton()),
           ],
         ),
       );
     }
 
-    // Android / other platforms: Display instruction text with View icon
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Container(
-        //   padding: const EdgeInsets.all(6),
-        //   decoration: const BoxDecoration(color: Color(0xFFFFD600), shape: BoxShape.circle),
-        //   child: const Icon(Icons.visibility, color: Color(0xFFFFD600), size: 18),
-        // ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            widget.instructionText,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
+    // Android / other platforms: Display instruction text within a button-like box for visual consistency
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Container(
+        height: 80,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: accentColor.withValues(alpha: 0.5)),
         ),
-      ],
+        child: Row(
+          children: [
+            buildIcon(),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                widget.instructionText,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

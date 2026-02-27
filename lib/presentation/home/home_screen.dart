@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:nfc_toolkit/nfc_toolkit.dart'; // Imports nfcServiceProvider, NfcDetectionRefExtension, GenericNfcDetected
 import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 
+import 'dart:convert';
+import '../../application/providers/encryption_providers.dart';
+import '../../domain/value_objects/secret_data.dart';
 import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
 import '../../domain/value_objects/lock_method.dart';
 import '../../infrastructure/repositories/draft_repository_impl.dart';
@@ -19,6 +22,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
+  bool _isDebugHighlighted = false;
+  int _nfcTapCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +83,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   String _statusMessage = 'NFCタグをタッチしてください';
   final List<String> _debugLog = [];
 
+  Future<void> _startMockNfcFlow() async {
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.check_circle, color: Colors.green, size: 60),
+              SizedBox(height: 16),
+              Text(
+                '読み取り成功',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // Close sheet
+
+    try {
+      final items = [
+        const SecretItem(key: 'テストデータ１', value: 'test test'),
+        const SecretItem(key: 'テストパスワード', value: 'abcdefgh'),
+      ];
+      final mockData = SecretData(items: items);
+      final lockMethod = const LockMethod(
+        type: LockType.pin,
+        verificationHash: '1234',
+      );
+
+      final service = ref.read(encryptionServiceProvider);
+      final encryptedBytes = await service.encrypt(mockData, lockMethod);
+      final encryptedText = base64Encode(encryptedBytes);
+
+      if (mounted) {
+        context.pushNamed(
+          AppRoute.unlockPin.name,
+          extra: {
+            'encryptedText': encryptedText,
+            'lockType': lockMethod.type.index,
+            'capacity': encryptedBytes.length,
+            'isManualUnlockRequired': false,
+          },
+        );
+      }
+    } catch (e) {
+      _addLog('Mock error: $e');
+    }
+  }
+
   /// デバッグパネルの表示フラグ。true にすると画面下部にログパネルが表示される。
   static const bool _kShowDebugPanel = false;
 
@@ -92,7 +166,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     // DEBUG: Listen to raw stream to see what's coming through
-    ref.listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (previous, next) {
+    ref.listen<AsyncValue<NfcDetection>>(nfcDetectionStreamProvider, (
+      previous,
+      next,
+    ) {
       next.when(
         data: (d) => _addLog('STREAM: ${d.runtimeType}'),
         error: (e, _) => _addLog('STREAM ERR: $e'),
@@ -115,7 +192,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             if (mounted) {
               context.pushNamed(
                 AppRoute.selectUnlock.name,
-                extra: {'encryptedText': encryptedText, 'capacity': detection.capacity},
+                extra: {
+                  'encryptedText': encryptedText,
+                  'capacity': detection.capacity,
+                },
               );
             }
           } else {
@@ -180,18 +260,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         children: [
           Spacer(flex: 4),
           // NFCアイコン（アクセントカラー）
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              shape: BoxShape.circle,
+          GestureDetector(
+            onTap: () {
+              if (_isDebugHighlighted) {
+                _nfcTapCount++;
+                if (_nfcTapCount >= 4) {
+                  _nfcTapCount = 0;
+                  setState(() {
+                    _isDebugHighlighted = false;
+                  });
+                  _startMockNfcFlow();
+                }
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.nfc, size: 60, color: AppColors.accent),
             ),
-            child: Icon(Icons.nfc, size: 60, color: AppColors.accent),
           ),
-          SizedBox(height: (defaultTargetPlatform == TargetPlatform.iOS) ? 72 : 18),
+          SizedBox(
+            height: (defaultTargetPlatform == TargetPlatform.iOS) ? 72 : 18,
+          ),
           NfcSessionTriggerWidget(
             instructionText: _statusMessage,
             buttonText: 'NFCタグの読み取りを開始',
+            isHighlighted: _isDebugHighlighted,
+            onLongPress: () {
+              if (mounted) {
+                setState(() {
+                  _isDebugHighlighted = !_isDebugHighlighted;
+                  _nfcTapCount = 0;
+                });
+              }
+            },
             onStartSession: (onError) {
               if (mounted) {
                 setState(() {
@@ -218,7 +323,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('── UI ──', style: TextStyle(color: AppColors.accent, fontSize: 10)),
+                  const Text(
+                    '── UI ──',
+                    style: TextStyle(color: AppColors.accent, fontSize: 10),
+                  ),
                   Expanded(
                     child: SingleChildScrollView(
                       reverse: true,
@@ -258,7 +366,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
             ),
           ],
-          SizedBox(height: (defaultTargetPlatform == TargetPlatform.iOS) ? 24 : 72),
+          SizedBox(
+            height: (defaultTargetPlatform == TargetPlatform.iOS) ? 24 : 72,
+          ),
 
           //・ 新規作成ボタン
           Padding(
@@ -289,7 +399,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                     color: AppColors.background,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.add, color: AppColors.accent, size: 18),
+                  child: const Icon(
+                    Icons.add,
+                    color: AppColors.accent,
+                    size: 18,
+                  ),
                 ),
                 label: Padding(
                   padding: const EdgeInsets.only(left: 16),
@@ -310,7 +424,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       builder: (context) {
         return AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text("下書きが見つかりました", style: TextStyle(color: AppColors.textPrimary)),
+          title: const Text(
+            "下書きが見つかりました",
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
           content: const Text(
             "以前作成したデータの下書きが残っています。\n復元しますか？",
             style: TextStyle(color: AppColors.textSecondary),
@@ -326,20 +443,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   context.goNamed(AppRoute.creationLockType.name);
                 }
               },
-              child: const Text("破棄して新規作成", style: TextStyle(color: AppColors.error)),
+              child: const Text(
+                "破棄して新規作成",
+                style: TextStyle(color: AppColors.error),
+              ),
             ),
             FilledButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 if (context.mounted) {
-                  context.goNamed(AppRoute.creationLockType.name, extra: {'restore': true});
+                  context.goNamed(
+                    AppRoute.creationLockType.name,
+                    extra: {'restore': true},
+                  );
                 }
               },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.background,
               ),
-              child: const Text("復元する", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                "復元する",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
