@@ -116,43 +116,42 @@ class _NfcSessionTriggerWidgetState
 
     // iOS: Show instruction text and button with View icon
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 80,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.isHighlighted
-                        ? accentColor.withValues(alpha: 0.5)
-                        : accentColor,
-                    foregroundColor: onAccentColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    alignment: Alignment.centerLeft,
-                  ),
-                  onPressed: _triggerIosSession,
-                  onLongPress: widget.onLongPress,
-                  child: Row(
-                    children: [
-                      buildIcon(),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          widget.buttonText,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+      return Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: SizedBox(
+              width: double.infinity,
+              height: 80,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.isHighlighted
+                      ? accentColor.withValues(alpha: 0.5)
+                      : accentColor,
+                  foregroundColor: onAccentColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  alignment: Alignment.centerLeft,
+                ),
+                onPressed: _triggerIosSession,
+                onLongPress: widget.onLongPress,
+                icon: buildIcon(),
+                label: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(
+                    widget.buttonText,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            const SizedBox(width: 40, child: NfcInfoButton()),
-          ],
-        ),
+          ),
+          const Positioned(
+            right: 0,
+            child: SizedBox(width: 40, child: NfcInfoButton()),
+          ),
+        ],
       );
     }
 

@@ -86,34 +86,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _startMockNfcFlow() async {
     if (!mounted) return;
 
+    final mockScanState = ValueNotifier<bool>(true);
+
     showModalBottomSheet(
       context: context,
       isDismissible: false,
       enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.check_circle, color: Colors.green, size: 60),
-              SizedBox(height: 16),
-              Text(
-                '読み取り成功',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        return ValueListenableBuilder<bool>(
+          valueListenable: mockScanState,
+          builder: (context, isScanning, child) {
+            return Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
               ),
-            ],
-          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isScanning ? Icons.sensors : Icons.check_circle,
+                    color: isScanning ? Colors.blue : Colors.green,
+                    size: 60,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isScanning ? 'スキャン準備完了' : '読み取り成功',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    mockScanState.value = false;
 
     await Future.delayed(const Duration(seconds: 1));
 
@@ -141,7 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           extra: {
             'encryptedText': encryptedText,
             'lockType': lockMethod.type.index,
-            'capacity': encryptedBytes.length,
+            'capacity': 492,
             'isManualUnlockRequired': false,
           },
         );
