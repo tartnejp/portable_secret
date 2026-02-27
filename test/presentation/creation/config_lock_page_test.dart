@@ -70,10 +70,8 @@ void main() {
       // We need to trigger state change. Since we are using FakeCreationNotifier which inherits generic logic,
       // we assume updateLockInput etc works.
       patternLockWidget.onChanged("012");
-      // The real notifier updates state.lockInput
+      patternLockWidget.onComplete!("012"); // Trigger auto-advance
 
-      // Tap Next
-      await tester.tap(find.text('次へ'));
       await tester.pumpAndSettle();
 
       // Now in Confirm mode
@@ -83,9 +81,8 @@ void main() {
       // Enter same pattern
       patternLockWidget = tester.widget<PatternLock>(find.byType(PatternLock));
       patternLockWidget.onChanged("012");
+      patternLockWidget.onComplete!("012"); // Auto-advance
 
-      // Tap Next -> Should transition to Second Stage (PIN)
-      await tester.tap(find.text('次へ'));
       await tester.pumpAndSettle();
 
       // Verify PIN UI

@@ -104,8 +104,8 @@ void main() {
     // 2. Select Lock Type
     expect(find.byType(SelectLockTypePage), findsOneWidget);
 
-    // Use Key for Pattern option
-    final patternOption = find.byKey(const Key('option_pattern'));
+    // Use Text for Pattern option since the key was removed
+    final patternOption = find.text('パターン');
     await tester.ensureVisible(patternOption);
     await tester.tap(patternOption);
     await tester.pumpAndSettle();

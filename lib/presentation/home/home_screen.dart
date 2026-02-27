@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nfc_manager/nfc_manager.dart'; // Import to trigger native session
 import 'package:nfc_toolkit/nfc_toolkit.dart'; // Imports nfcServiceProvider, NfcDetectionRefExtension, GenericNfcDetected
 import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 
@@ -86,59 +87,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _startMockNfcFlow() async {
     if (!mounted) return;
 
-    final mockScanState = ValueNotifier<bool>(true);
-
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return ValueListenableBuilder<bool>(
-          valueListenable: mockScanState,
-          builder: (context, isScanning, child) {
-            return Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isScanning ? Icons.sensors : Icons.check_circle,
-                    color: isScanning ? Colors.blue : Colors.green,
-                    size: 60,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    isScanning ? 'スキャン準備完了' : '読み取り成功',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-
-    mockScanState.value = false;
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-    Navigator.of(context).pop(); // Close sheet
-
     try {
       final items = [
         const SecretItem(key: 'テストデータ１', value: 'test test'),
@@ -153,6 +101,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       final service = ref.read(encryptionServiceProvider);
       final encryptedBytes = await service.encrypt(mockData, lockMethod);
       final encryptedText = base64Encode(encryptedBytes);
+
+      // Start the real OS scanning sheet on iOS, but immediately intercept/resolve it
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // Trigger the OS sheet to appear
+        NfcManager.instance.startSession(
+          pollingOptions: {
+            NfcPollingOption.iso14443,
+            NfcPollingOption.iso15693,
+            NfcPollingOption.iso18092,
+          },
+          onDiscovered:
+              (tag) async {}, // won't actually hit due to early resolve
+          alertMessageIos: 'スキャンの準備ができました',
+        );
+
+        // Wait a small amount for the UI to show and look natural
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        // Stop the session with a success message, which triggers the checkmark
+        await NfcManager.instance.stopSession(alertMessageIos: '読み取り成功');
+
+        // Wait another moment for the success animation to finish naturally
+        await Future.delayed(const Duration(milliseconds: 1000));
+      }
 
       if (mounted) {
         context.pushNamed(

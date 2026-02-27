@@ -128,9 +128,13 @@ class _NfcSessionTriggerWidgetState
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.isHighlighted
-                      ? accentColor.withValues(alpha: 0.5)
+                      ? accentColor.withValues(
+                          alpha: 0.5,
+                        ) // Must be clickable still
                       : accentColor,
-                  foregroundColor: onAccentColor,
+                  foregroundColor: widget.isHighlighted
+                      ? onAccentColor.withValues(alpha: 0.5)
+                      : onAccentColor,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   alignment: Alignment.centerLeft,
                 ),
@@ -141,7 +145,12 @@ class _NfcSessionTriggerWidgetState
                   padding: const EdgeInsets.only(left: 16),
                   child: Text(
                     widget.buttonText,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: widget.isHighlighted
+                          ? onAccentColor.withValues(alpha: 0.5)
+                          : onAccentColor,
+                    ),
                   ),
                 ),
               ),

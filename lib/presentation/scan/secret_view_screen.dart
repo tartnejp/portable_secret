@@ -33,6 +33,10 @@ class SecretViewScreen extends ConsumerWidget {
     // Check if the value is a valid URL
     final isUrl = value.startsWith('http://') || value.startsWith('https://');
 
+    final valueColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.7);
+
     if (isUrl) {
       return InkWell(
         onTap: () async {
@@ -49,11 +53,14 @@ class SecretViewScreen extends ConsumerWidget {
         },
         child: Text(
           value,
-          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+          style: const TextStyle(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+          ),
         ),
       );
     } else {
-      return SelectableText(value);
+      return SelectableText(value, style: TextStyle(color: valueColor));
     }
   }
 
@@ -72,22 +79,51 @@ class SecretViewScreen extends ConsumerWidget {
               itemCount: secret.items.length,
               itemBuilder: (context, index) {
                 final item = secret.items[index];
-                return ListTile(
-                  title: SelectableText(item.key),
-                  subtitle: _buildValueText(context, item.value),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.copy),
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: item.value));
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${item.key}をコピーしました'),
-                            duration: const Duration(seconds: 2),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.key,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Flexible(child: _buildValueText(context, item.value)),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 20),
+                            padding: const EdgeInsets.only(
+                              left: 8.0,
+                              right: 8.0,
+                            ),
+                            constraints: const BoxConstraints(),
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: item.value),
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${item.key}をコピーしました'),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
                           ),
-                        );
-                      }
-                    },
+                        ],
+                      ),
+                      const Divider(height: 16),
+                    ],
                   ),
                 );
               },
