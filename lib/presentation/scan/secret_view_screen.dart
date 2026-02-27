@@ -33,9 +33,10 @@ class SecretViewScreen extends ConsumerWidget {
     // Check if the value is a valid URL
     final isUrl = value.startsWith('http://') || value.startsWith('https://');
 
-    final valueColor = Theme.of(
-      context,
-    ).colorScheme.onSurface.withValues(alpha: 0.7);
+    final valueStyle = TextStyle(
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+      fontSize: 20,
+    );
 
     if (isUrl) {
       return InkWell(
@@ -56,11 +57,12 @@ class SecretViewScreen extends ConsumerWidget {
           style: const TextStyle(
             color: Colors.blue,
             decoration: TextDecoration.underline,
+            fontSize: 20,
           ),
         ),
       );
     } else {
-      return SelectableText(value, style: TextStyle(color: valueColor));
+      return SelectableText(value, style: valueStyle);
     }
   }
 

@@ -22,7 +22,8 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
   }
 
   void _checkTransition(CreationState? previous, CreationState next) {
-    if (next.step == CreationStep.inputData && (previous?.step != CreationStep.inputData)) {
+    if (next.step == CreationStep.inputData &&
+        (previous?.step != CreationStep.inputData)) {
       context.goNamed(AppRoute.creationInput.name);
     }
   }
@@ -35,7 +36,9 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
 
     ref.listen(creationProvider, (prev, next) {
       if (next.error != null && next.error != prev?.error) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.error!)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.error!)));
       }
       _checkTransition(prev, next);
     });
@@ -65,7 +68,11 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.nfc, size: 80, color: Colors.blue),
+              Icon(
+                Icons.nfc,
+                size: 80,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(height: 24),
               NfcSessionTriggerWidget(
                 instructionText: "NFCカードをタッチしてください\n書き込み可能なデータサイズを計測します",
@@ -98,13 +105,18 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
     );
   }
 
-  void _showManualSelectDialog(BuildContext context, CreationNotifier notifier) {
+  void _showManualSelectDialog(
+    BuildContext context,
+    CreationNotifier notifier,
+  ) {
     showModalBottomSheet(
       useSafeArea: true,
       context: context,
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
