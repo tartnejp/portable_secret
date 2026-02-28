@@ -11,7 +11,11 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
   final String encryptedText;
   final int capacity;
 
-  const SelectUnlockMethodScreen({super.key, required this.encryptedText, required this.capacity});
+  const SelectUnlockMethodScreen({
+    super.key,
+    required this.encryptedText,
+    required this.capacity,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,15 +26,18 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32.0,
+              vertical: 40.0,
+            ),
             child: Text(
-              'このデータを開くには正しい解除方法を指定する必要があります。\n解除方法を選択してください。',
+              'このデータを開くには正しい解除方法を指定する必要があります。\n\n解除方法を選択してください。',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontSize: 15,
                 height: 1.6,
                 fontWeight: FontWeight.w500,
               ),
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.left,
             ),
           ),
           Expanded(
@@ -43,19 +50,32 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
                 _UnlockMethodTile(
                   icon: Icons.password_rounded,
                   label: 'パスワード',
-                  onTap: () =>
-                      _navigateTo(context, AppRoute.unlockPassword, LockType.password, extraBase),
+                  onTap: () => _navigateTo(
+                    context,
+                    AppRoute.unlockPassword,
+                    LockType.password,
+                    extraBase,
+                  ),
                 ),
                 _UnlockMethodTile(
                   icon: Icons.pattern_rounded,
                   label: 'パターン',
-                  onTap: () =>
-                      _navigateTo(context, AppRoute.unlockPattern, LockType.pattern, extraBase),
+                  onTap: () => _navigateTo(
+                    context,
+                    AppRoute.unlockPattern,
+                    LockType.pattern,
+                    extraBase,
+                  ),
                 ),
                 _UnlockMethodTile(
                   icon: Icons.pin_rounded,
                   label: 'PIN',
-                  onTap: () => _navigateTo(context, AppRoute.unlockPin, LockType.pin, extraBase),
+                  onTap: () => _navigateTo(
+                    context,
+                    AppRoute.unlockPin,
+                    LockType.pin,
+                    extraBase,
+                  ),
                 ),
                 _UnlockMethodTile(
                   icon: Icons.verified_user_rounded,
@@ -98,7 +118,11 @@ class _UnlockMethodTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _UnlockMethodTile({required this.icon, required this.label, required this.onTap});
+  const _UnlockMethodTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +138,9 @@ class _UnlockMethodTile extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.30),
               width: 1.5,
             ),
           ),
@@ -127,10 +153,19 @@ class _UnlockMethodTile extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 32, color: Theme.of(context).colorScheme.onPrimary),
+                child: Icon(
+                  icon,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
               ),
               const SizedBox(height: 16),
-              Text(label, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 15)),
+              Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontSize: 15),
+              ),
             ],
           ),
         ),

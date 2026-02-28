@@ -21,6 +21,9 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
   /// It receives a callback to handle errors and timeouts, which it should pass to the underlying nfc_service.
   final void Function(void Function(String) onError)? onStartSession;
   final bool isHighlighted;
+  final bool showIcon;
+  final bool centerText;
+  final double? fontSize;
   final VoidCallback? onLongPress;
 
   const NfcSessionTriggerWidget({
@@ -28,8 +31,11 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
     required this.instructionText,
     required this.buttonText,
     required this.onStartSession,
-    this.isHighlighted = false,
     this.onLongPress,
+    this.isHighlighted = false,
+    this.showIcon = true,
+    this.centerText = false,
+    this.fontSize,
   });
 
   @override
@@ -103,6 +109,7 @@ class _NfcSessionTriggerWidgetState
 
     final Color accentColor = Theme.of(context).colorScheme.primary;
     final Color onAccentColor = Theme.of(context).colorScheme.onPrimary;
+
     final Color surfaceColor = Theme.of(context).colorScheme.surface;
 
     // Common Icon decoration used in buttons/containers
@@ -140,16 +147,23 @@ class _NfcSessionTriggerWidgetState
                 ),
                 onPressed: _triggerIosSession,
                 onLongPress: widget.onLongPress,
-                icon: buildIcon(),
+                icon: widget.showIcon ? buildIcon() : const SizedBox.shrink(),
                 label: Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Text(
-                    widget.buttonText,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: widget.isHighlighted
-                          ? onAccentColor.withValues(alpha: 0.5)
-                          : onAccentColor,
+                  padding: widget.showIcon
+                      ? const EdgeInsets.only(left: 16)
+                      : EdgeInsets.zero,
+                  child: Container(
+                    width: widget.centerText ? double.infinity : null,
+                    alignment: widget.centerText ? Alignment.center : null,
+                    child: Text(
+                      widget.buttonText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: widget.fontSize,
+                        color: widget.isHighlighted
+                            ? onAccentColor.withValues(alpha: 0.5)
+                            : onAccentColor,
+                      ),
                     ),
                   ),
                 ),
@@ -164,31 +178,20 @@ class _NfcSessionTriggerWidgetState
       );
     }
 
-    // Android / other platforms: Display instruction text within a button-like box for visual consistency
+    // Android / other platforms: Display instruction text without icon or border
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Container(
         height: 80,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: accentColor.withValues(alpha: 0.5)),
         ),
-        child: Row(
-          children: [
-            buildIcon(),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                widget.instructionText,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+        child: Text(
+          widget.instructionText,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ),
     );

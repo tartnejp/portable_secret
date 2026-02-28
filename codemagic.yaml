@@ -51,9 +51,28 @@ workflows:
 
       - name: Build IPA for App Store / TestFlight
         script: |
+          # pubspec.yamlからバージョン取得
+          VERSION=$(grep "^version:" pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          
+          # 1つ目・2つ目の数字を取得
+          MAJOR=$(echo $VERSION | cut -d'.' -f1)
+          MINOR=$(echo $VERSION | cut -d'.' -f2)
+          
+          # カスタムエポック（2024-01-01 00:00:00 UTC）からの経過分数
+          # → タイムスタンプそのものでなく、後の時刻ほど大きくなる
+          CUSTOM_EPOCH=1704067200
+          NOW=$(date +%s)
+          MINUTES_SINCE_EPOCH=$(( (NOW - CUSTOM_EPOCH) / 180 ))
+          
+          BUILD_NUMBER="$MAJOR.$MINOR.$MINUTES_SINCE_EPOCH"
+          echo "Version:      $VERSION"
+          echo "Build number: $BUILD_NUMBER"
+
           # Codemagicが自動生成したexport_options.plistを使用してIPAをビルド
           flutter build ipa --release \
           --export-options-plist=/Users/builder/export_options.plist \
+          --build-name=$VERSION \
+          --build-number=$BUILD_NUMBER \
           # --verbose 2>&1 | grep -E "error:|Provisioning|Signing|exportArchive"
 
     artifacts:

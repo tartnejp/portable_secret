@@ -16,6 +16,7 @@ import '../../domain/value_objects/lock_method.dart';
 import '../../infrastructure/repositories/draft_repository_impl.dart';
 import '../../router_provider.dart';
 import '../app_colors.dart';
+import 'widgets/animated_app_bar_title.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -79,12 +80,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
     if (mounted) {
       setState(() {
-        _statusMessage = 'NFCタグをタッチしてください';
+        _statusMessage = 'NFCカードをタッチしてください\n検知すると読み取りを開始します';
       });
     }
   }
 
-  String _statusMessage = 'NFCタグをタッチしてください';
+  String _statusMessage = 'NFCカードをタッチしてください\n検知すると読み取りを開始します';
   final List<String> _debugLog = [];
 
   Future<void> _startMockNfcFlow() async {
@@ -248,7 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
     // Optional: Listen for URL Detection
     return AppScaffold(
-      appBar: AppBar(title: const Text('Portable Sec')),
+      appBar: AppBar(title: const AnimatedAppBarTitle(), centerTitle: true),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -256,7 +257,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           // NFCアイコン（アクセントカラー）
           GestureDetector(
             onTap: () {
-              if (defaultTargetPlatform == TargetPlatform.iOS) {
+              if (defaultTargetPlatform != TargetPlatform.iOS) {
                 return;
               }
               if (_isDebugHighlighted && _isCreationDebugHighlighted) {
@@ -319,7 +320,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             onStartSession: (onError) {
               if (mounted) {
                 setState(() {
-                  _statusMessage = 'NFCカードを検知すると読み取り開始します';
+                  _statusMessage = 'NFCカードをタッチしてください\n検知すると読み取りを開始します';
                 });
               }
               _addLog('startSession() called');
@@ -406,11 +407,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.background,
-                  side: _isCreationDebugHighlighted
-                      ? const BorderSide(color: Colors.white, width: 4)
-                      : BorderSide.none,
+                  backgroundColor: _isCreationDebugHighlighted
+                      ? AppColors.accent.withValues(alpha: 0.5)
+                      : AppColors.accent,
+                  foregroundColor: _isCreationDebugHighlighted
+                      ? AppColors.background.withValues(alpha: 0.5)
+                      : AppColors.background,
                 ),
                 onPressed: () async {
                   final draftRepo = ref.read(wizardDraftRepositoryProvider);
@@ -426,13 +428,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 },
                 icon: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppColors.background,
+                  decoration: BoxDecoration(
+                    color: _isCreationDebugHighlighted
+                        ? AppColors.background.withValues(alpha: 0.5)
+                        : AppColors.background,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add,
-                    color: AppColors.accent,
+                    color: _isCreationDebugHighlighted
+                        ? AppColors.accent.withValues(alpha: 0.5)
+                        : AppColors.accent,
                     size: 18,
                   ),
                 ),

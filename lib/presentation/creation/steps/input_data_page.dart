@@ -249,7 +249,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "ロック解除時の方式（パスワード/PIN/パターン）選択",
+                "ロック解除時の方式の選択有無",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),

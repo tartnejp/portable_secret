@@ -9,6 +9,7 @@ import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 import '../../../application/providers/creation_providers.dart';
 import '../../../application/providers/mock_providers.dart';
 import '../../../router_provider.dart';
+import '../../app_colors.dart';
 
 class WriteTagPage extends ConsumerStatefulWidget {
   const WriteTagPage({super.key});
@@ -84,11 +85,14 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.nfc, size: 100, color: Colors.orange),
+              const Icon(Icons.nfc, size: 60, color: AppColors.accent),
               const SizedBox(height: 24),
               NfcSessionTriggerWidget(
                 instructionText: "NFCカードをタッチしてください\n(書き込み待機中...)",
                 buttonText: "書き込み開始",
+                showIcon: false,
+                centerText: true,
+                fontSize: 18,
                 onStartSession: (onError) {
                   final isMock = ref.read(mockNfcWriteModeProvider);
                   if (isMock) {

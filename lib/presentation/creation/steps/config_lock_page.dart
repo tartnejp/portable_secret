@@ -108,12 +108,27 @@ class ConfigLockPage extends ConsumerWidget {
 
               const Spacer(),
 
-              if (state.selectedType == LockType.password)
-                ElevatedButton(
-                  onPressed: state.lockInput.isNotEmpty
-                      ? notifier.nextFromLockConfig
-                      : null,
-                  child: const Text("次へ"),
+              if (state.selectedType == LockType.password ||
+                  state.selectedType == LockType.pin ||
+                  (state.selectedType == LockType.patternAndPin &&
+                      state.isLockSecondStage))
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (state.isConfirming) ...[
+                      TextButton(
+                        onPressed: notifier.retryLockInput,
+                        child: const Text("やり直す"),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    ElevatedButton(
+                      onPressed: state.lockInput.isNotEmpty
+                          ? notifier.nextFromLockConfig
+                          : null,
+                      child: const Text("次へ"),
+                    ),
+                  ],
                 ),
               const SizedBox(height: 32),
             ],

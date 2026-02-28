@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 class NfcInfoButton extends StatelessWidget {
   final String message =
       'iPhoneやiPadが反応しないNFCタグがあります。このような場合はデータに関わらず本アプリでも扱えません。'
-      'その際は、NFC Toolsというアプリでタグの初期化を実施の上、書き込みを行ってください。';
+      'その際は、NFC Toolsというアプリでタグの初期化を実施した後、本アプリでデータ登録・保存を行ってください。';
   final String url = 'https://apps.apple.com/jp/app/nfc-tools/id1252962749';
   final String title;
 
@@ -59,7 +59,10 @@ class NfcInfoButton extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('閉じる')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('閉じる'),
+            ),
           ],
         );
       },
