@@ -65,6 +65,10 @@ class _NfcSessionTriggerWidgetState
   }
 
   void _handleError(String message) {
+    if (message == nfcErrorUserCanceled) {
+      return;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 

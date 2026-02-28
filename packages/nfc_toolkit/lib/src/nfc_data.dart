@@ -14,6 +14,9 @@ import 'core/nfc_detection.dart';
 
 enum NfcErrorType { unknown, userCanceled, systemError }
 
+/// Constant used to identify when an NFC session was explicitly canceled by the user.
+const String nfcErrorUserCanceled = 'USER_CANCELED';
+
 class NfcError extends NfcDetection with OverlayDisplay {
   final NfcErrorType type;
   final String message;

@@ -58,7 +58,9 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
     // テキストの描画サイズを計算
     final textPainter = TextPainter(
       text: TextSpan(text: _titleText, style: textStyle),
+      textAlign: TextAlign.start,
       textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout();
 
     final textWidth = textPainter.width;

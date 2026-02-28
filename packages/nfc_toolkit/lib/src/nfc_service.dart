@@ -224,14 +224,25 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
           onSessionErrorIos: (error) async {
             _isSessionActive = false;
             // iOS has already invalidated the session at this point.
-            // Do NOT call NfcManager.instance.stopSession() here — doing so
+            // Do NOT call NfcManager.instance.stopSession() here with arguments — doing so
             // may cause nfc_manager to briefly re-open a session, resulting
             // in the scan sheet flashing on screen.
+            // We call it without arguments to ensure internal state is cleared
+            // completely avoiding 'session already exists' errors on subsequent scans.
+            try {
+              await NfcManager.instance.stopSession();
+            } catch (_) {}
 
             // Suppress the "User Canceled" error so it doesn't show as a red SnackBar
             if (error.code ==
                 NfcReaderErrorCodeIos
                     .readerSessionInvalidationErrorUserCanceled) {
+              if (onError != null) {
+                onError(nfcErrorUserCanceled);
+              }
+              if (_writeController != null && !_writeController!.isClosed) {
+                _writeController!.add(NfcWriteError(nfcErrorUserCanceled));
+              }
               return;
             }
 
