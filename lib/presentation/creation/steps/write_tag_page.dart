@@ -1,10 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nfc_toolkit/nfc_toolkit.dart';
+import 'package:nfc_manager/nfc_manager.dart';
 import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 
 import '../../../application/providers/creation_providers.dart';
+import '../../../application/providers/mock_providers.dart';
 import '../../../router_provider.dart';
 
 class WriteTagPage extends ConsumerStatefulWidget {
@@ -18,6 +21,32 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
   @override
   void initState() {
     super.initState();
+  }
+
+  Future<void> _startMockWriteFlow() async {
+    if (!mounted) return;
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // Trigger OS sheet
+      NfcManager.instance.startSession(
+        pollingOptions: {
+          NfcPollingOption.iso14443,
+          NfcPollingOption.iso15693,
+          NfcPollingOption.iso18092,
+        },
+        onDiscovered: (tag) async {},
+        alertMessageIos: 'スキャンの準備ができました',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+      await NfcManager.instance.stopSession(alertMessageIos: '書き込みが成功しました');
+      await Future.delayed(const Duration(milliseconds: 1000));
+    }
+
+    ref.read(mockNfcWriteModeProvider.notifier).disableMode();
+    if (mounted) {
+      _showSuccessDialog();
+    }
   }
 
   @override
@@ -61,7 +90,14 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
                 instructionText: "NFCカードをタッチしてください\n(書き込み待機中...)",
                 buttonText: "書き込み開始",
                 onStartSession: (onError) {
-                  ref.read(creationProvider.notifier).writeToNfc(onError: onError);
+                  final isMock = ref.read(mockNfcWriteModeProvider);
+                  if (isMock) {
+                    _startMockWriteFlow();
+                  } else {
+                    ref
+                        .read(creationProvider.notifier)
+                        .writeToNfc(onError: onError);
+                  }
                 },
               ),
               if (state.error != null)

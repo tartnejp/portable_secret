@@ -93,6 +93,16 @@ abstract final class AppTheme {
         contentTextStyle: const TextStyle(color: AppColors.textSecondary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: AppColors.surfaceLight,
+        contentTextStyle: TextStyle(color: AppColors.textPrimary),
+        actionTextColor: AppColors.accent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 }

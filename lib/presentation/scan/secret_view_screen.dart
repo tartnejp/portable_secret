@@ -98,9 +98,9 @@ class SecretViewScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Flexible(child: _buildValueText(context, item.value)),
+                          Expanded(child: _buildValueText(context, item.value)),
                           IconButton(
                             icon: const Icon(Icons.copy, size: 20),
                             padding: const EdgeInsets.only(
@@ -124,7 +124,6 @@ class SecretViewScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const Divider(height: 16),
                     ],
                   ),
                 );

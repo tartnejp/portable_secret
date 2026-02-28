@@ -310,9 +310,15 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                     child: ListTile(
                       title: Text(
                         item.key,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
-                      subtitle: Text(item.value),
+                      subtitle: Text(
+                        item.value,
+                        style: const TextStyle(fontSize: 20),
+                      ),
                       trailing: IconButton(
                         icon: const Icon(
                           Icons.remove_circle,

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nfc_manager/nfc_manager.dart'; // Import to trigger native session
@@ -8,6 +9,7 @@ import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 
 import 'dart:convert';
 import '../../application/providers/encryption_providers.dart';
+import '../../application/providers/mock_providers.dart';
 import '../../domain/value_objects/secret_data.dart';
 import '../../application/nfc/secret_detected.dart'; // Imports SecretDetection
 import '../../domain/value_objects/lock_method.dart';
@@ -24,6 +26,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   bool _isDebugHighlighted = false;
+  bool _isCreationDebugHighlighted = false;
   int _nfcTapCount = 0;
 
   @override
@@ -253,7 +256,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           // NFCアイコン（アクセントカラー）
           GestureDetector(
             onTap: () {
-              if (_isDebugHighlighted) {
+              if (defaultTargetPlatform == TargetPlatform.iOS) {
+                return;
+              }
+              if (_isDebugHighlighted && _isCreationDebugHighlighted) {
+                _nfcTapCount++;
+                if (_nfcTapCount >= 4) {
+                  _nfcTapCount = 0;
+                  SystemChrome.setEnabledSystemUIMode(
+                    SystemUiMode.manual,
+                    overlays: [SystemUiOverlay.bottom],
+                  );
+                  setState(() {
+                    _isDebugHighlighted = false;
+                    _isCreationDebugHighlighted = false;
+                  });
+                }
+              } else if (_isDebugHighlighted) {
                 _nfcTapCount++;
                 if (_nfcTapCount >= 4) {
                   _nfcTapCount = 0;
@@ -262,12 +281,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   });
                   _startMockNfcFlow();
                 }
+              } else if (_isCreationDebugHighlighted) {
+                _nfcTapCount++;
+                if (_nfcTapCount >= 4) {
+                  _nfcTapCount = 0;
+                  setState(() {
+                    _isCreationDebugHighlighted = false;
+                  });
+                  ref.read(mockNfcWriteModeProvider.notifier).enableMode();
+                }
               }
             },
             child: Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: Theme.of(context).colorScheme.surface.withAlpha(100),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.nfc, size: 60, color: AppColors.accent),
@@ -368,9 +396,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               width: double.infinity,
               height: 80,
               child: ElevatedButton.icon(
+                onLongPress: () {
+                  if (mounted) {
+                    setState(() {
+                      _isCreationDebugHighlighted =
+                          !_isCreationDebugHighlighted;
+                      _nfcTapCount = 0;
+                    });
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.background,
+                  side: _isCreationDebugHighlighted
+                      ? const BorderSide(color: Colors.white, width: 4)
+                      : BorderSide.none,
                 ),
                 onPressed: () async {
                   final draftRepo = ref.read(wizardDraftRepositoryProvider);
