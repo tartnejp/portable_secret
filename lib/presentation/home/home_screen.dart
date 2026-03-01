@@ -17,6 +17,7 @@ import '../../infrastructure/repositories/draft_repository_impl.dart';
 import '../../router_provider.dart';
 import '../app_colors.dart';
 import 'widgets/animated_app_bar_title.dart';
+import '../widgets/nfc_info_button.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -253,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Spacer(flex: 4),
+          Spacer(flex: 10),
           // NFCアイコン（アクセントカラー）
           GestureDetector(
             onTap: () {
@@ -309,6 +310,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             instructionText: _statusMessage,
             buttonText: 'NFCタグの読み取りを開始',
             isHighlighted: _isDebugHighlighted,
+            infoButton: const NfcInfoButton(),
             onLongPress: () {
               if (mounted) {
                 setState(() {
@@ -449,7 +451,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
             ),
           ),
-          Spacer(flex: 6),
+          Spacer(flex: 17),
         ],
       ),
     );

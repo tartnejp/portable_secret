@@ -6,6 +6,7 @@ import 'package:nfc_toolkit/nfc_toolkit.dart';
 import '../../application/nfc/secret_detected.dart';
 import '../../domain/value_objects/lock_method.dart';
 import '../../router_provider.dart';
+import '../widgets/nfc_info_button.dart';
 
 class PromptRescanScreen extends ConsumerStatefulWidget {
   const PromptRescanScreen({super.key});
@@ -97,6 +98,7 @@ class _PromptRescanScreenState extends ConsumerState<PromptRescanScreen> {
             NfcSessionTriggerWidget(
               instructionText: 'アプリが起動しました。\nデータを復号するために\nもう一度NFCタグをタッチしてください。',
               buttonText: 'NFCタグの読み取りを開始',
+              infoButton: const NfcInfoButton(),
               onStartSession: (onError) {
                 ref.read(nfcServiceProvider).startSession();
               },

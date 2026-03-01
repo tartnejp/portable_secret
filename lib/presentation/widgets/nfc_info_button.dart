@@ -6,8 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Usage:
 /// ```dart
 /// NfcInfoButton(
-///   message: 'Some info text.',
-///   url: 'https://example.com',
+///   title: 'Some info text.',
 /// )
 /// ```
 class NfcInfoButton extends StatelessWidget {
@@ -21,8 +20,16 @@ class NfcInfoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If the status bar is hidden (e.g. padding.top == 0), make it look transparent.
+    // It will still respond to taps.
+    final topPadding = MediaQuery.paddingOf(context).top;
+    final isHidden = topPadding == 0.0;
+
     return IconButton(
-      icon: const Icon(Icons.info_outline),
+      icon: Icon(
+        Icons.info_outline,
+        color: isHidden ? Colors.transparent : null,
+      ),
       tooltip: title,
       onPressed: () => _showInfoDialog(context),
       //以下は余白をなくすため

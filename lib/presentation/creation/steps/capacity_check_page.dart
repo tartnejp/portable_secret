@@ -7,6 +7,7 @@ import 'package:portable_sec/presentation/widgets/appscaffold.dart';
 
 import '../../../application/providers/creation_providers.dart';
 import '../../../router_provider.dart';
+import '../../widgets/nfc_info_button.dart';
 
 class CapacityCheckPage extends ConsumerStatefulWidget {
   const CapacityCheckPage({super.key});
@@ -83,6 +84,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
                 fontSize: defaultTargetPlatform == TargetPlatform.iOS
                     ? 18
                     : null,
+                infoButton: const NfcInfoButton(),
                 onStartSession: (onError) {
                   ref.read(nfcServiceProvider).startSession();
                 },

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../nfc_toolkit.dart';
-import 'nfc_info_button.dart';
 
 /// A smart wrapper widget that handles the platform differences for NFC sessions.
 /// - On Android, it automatically starts the required provider mechanism and shows static test.
@@ -25,6 +24,7 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
   final bool centerText;
   final double? fontSize;
   final VoidCallback? onLongPress;
+  final Widget? infoButton;
 
   const NfcSessionTriggerWidget({
     super.key,
@@ -36,6 +36,7 @@ class NfcSessionTriggerWidget extends ConsumerStatefulWidget {
     this.showIcon = true,
     this.centerText = false,
     this.fontSize,
+    this.infoButton,
   });
 
   @override
@@ -121,7 +122,7 @@ class _NfcSessionTriggerWidgetState
       return Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(color: onAccentColor, shape: BoxShape.circle),
-        child: Icon(Icons.visibility, color: accentColor, size: 18),
+        child: Icon(Icons.crop_free, color: accentColor, size: 18),
       );
     }
 
@@ -174,10 +175,11 @@ class _NfcSessionTriggerWidgetState
               ),
             ),
           ),
-          const Positioned(
-            right: 0,
-            child: SizedBox(width: 40, child: NfcInfoButton()),
-          ),
+          if (widget.infoButton != null)
+            Positioned(
+              right: 0,
+              child: SizedBox(width: 40, child: widget.infoButton!),
+            ),
         ],
       );
     }

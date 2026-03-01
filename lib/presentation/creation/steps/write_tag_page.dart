@@ -10,6 +10,7 @@ import '../../../application/providers/creation_providers.dart';
 import '../../../application/providers/mock_providers.dart';
 import '../../../router_provider.dart';
 import '../../app_colors.dart';
+import '../../widgets/nfc_info_button.dart';
 
 class WriteTagPage extends ConsumerStatefulWidget {
   const WriteTagPage({super.key});
@@ -93,6 +94,7 @@ class _WriteTagPageState extends ConsumerState<WriteTagPage> {
                 showIcon: false,
                 centerText: true,
                 fontSize: 18,
+                infoButton: const NfcInfoButton(),
                 onStartSession: (onError) {
                   final isMock = ref.read(mockNfcWriteModeProvider);
                   if (isMock) {

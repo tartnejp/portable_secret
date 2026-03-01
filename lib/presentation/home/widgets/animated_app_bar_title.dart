@@ -66,7 +66,13 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
       textWidthBasis: TextWidthBasis.parent, //iOSでは重要らしい
     )..layout();
 
-    final textWidth = textPainter.width;
+    final textWidth = TextPainter.computeWidth(
+      text: TextSpan(text: _titleText, style: baseStyle),
+      textAlign: TextAlign.start,
+      textDirection: TextDirection.ltr,
+      textWidthBasis: TextWidthBasis.parent, //iOSでは重要らしい
+    );
+    final textWidth2 = textPainter.width;
     const spacing = 12.0; // テキストと画像の間のスペース
     final totalTextContainerWidth = textWidth + spacing;
 
@@ -79,6 +85,8 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Text(textWidth.toString()),
+              Text(textWidth2.toString()),
               // Text Area
               ClipRect(
                 child: Align(
