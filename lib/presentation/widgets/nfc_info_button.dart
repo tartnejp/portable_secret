@@ -20,9 +20,9 @@ class NfcInfoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If the status bar is hidden (e.g. padding.top == 0), make it look transparent.
-    // It will still respond to taps.
-    final topPadding = MediaQuery.paddingOf(context).top;
+    // If the status bar is hidden (e.g. viewPadding.top == 0), make it look transparent.
+    // It will still respond to taps. We use viewPadding to avoid SafeArea consumption.
+    final topPadding = MediaQuery.viewPaddingOf(context).top;
     final isHidden = topPadding == 0.0;
 
     return IconButton(

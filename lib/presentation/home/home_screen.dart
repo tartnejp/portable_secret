@@ -254,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Spacer(flex: 10),
+          Spacer(flex: 5),
           // NFCアイコン（アクセントカラー）
           GestureDetector(
             onTap: () {
@@ -451,7 +451,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
             ),
           ),
-          Spacer(flex: 17),
+          Spacer(flex: 9),
         ],
       ),
     );

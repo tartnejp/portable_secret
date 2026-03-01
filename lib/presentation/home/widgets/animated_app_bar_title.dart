@@ -16,6 +16,8 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
 
   final String _titleText = 'PORTABLE SECRET';
 
+  bool _isFontLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,8 +36,17 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
       curve: const Interval(6.0 / 7.0, 1.0, curve: Curves.easeInOut),
     ).animate(_controller);
 
-    // アニメーション開始
+    // フォントのロードを待ってから計算・アニメーションを開始
+    _initFontsAndAnimation();
+  }
+
+  Future<void> _initFontsAndAnimation() async {
+    // Genosフォントがダウンロード・用意されるのを待機
+    await GoogleFonts.pendingFonts([GoogleFonts.genos().fontFamily!]);
     if (mounted) {
+      setState(() {
+        _isFontLoaded = true;
+      });
       _controller.forward();
     }
   }
@@ -48,6 +59,11 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
 
   @override
   Widget build(BuildContext context) {
+    if (!_isFontLoaded) {
+      // フォント未ロード時はAppBarタイトルの位置に何も表示せず待機する
+      return const SizedBox(width: 36, height: 36);
+    }
+
     final baseStyle = GoogleFonts.genos(
       color: Colors.yellow,
       fontSize: 20,
@@ -59,12 +75,12 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
       fontSize: MediaQuery.textScalerOf(context).scale(baseStyle.fontSize!),
     );
     // テキストの描画サイズを計算
-    final textPainter = TextPainter(
-      text: TextSpan(text: _titleText, style: textStyle),
-      textAlign: TextAlign.start,
-      textDirection: TextDirection.ltr,
-      textWidthBasis: TextWidthBasis.parent, //iOSでは重要らしい
-    )..layout();
+    // final textPainter = TextPainter(
+    //   text: TextSpan(text: _titleText, style: textStyle),
+    //   textAlign: TextAlign.start,
+    //   textDirection: TextDirection.ltr,
+    //   textWidthBasis: TextWidthBasis.parent, //iOSでは重要らしい
+    // )..layout();
 
     final textWidth = TextPainter.computeWidth(
       text: TextSpan(text: _titleText, style: baseStyle),
@@ -72,7 +88,6 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
       textDirection: TextDirection.ltr,
       textWidthBasis: TextWidthBasis.parent, //iOSでは重要らしい
     );
-    final textWidth2 = textPainter.width;
     const spacing = 12.0; // テキストと画像の間のスペース
     final totalTextContainerWidth = textWidth + spacing;
 
@@ -85,8 +100,6 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(textWidth.toString()),
-              Text(textWidth2.toString()),
               // Text Area
               ClipRect(
                 child: Align(
