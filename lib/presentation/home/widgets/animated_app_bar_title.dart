@@ -48,19 +48,22 @@ class _AnimatedAppBarTitleState extends State<AnimatedAppBarTitle>
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = GoogleFonts.genos(
+    final baseStyle = GoogleFonts.genos(
       color: Colors.yellow,
       fontSize: 20,
       fontWeight: FontWeight.normal,
       letterSpacing: 2.0,
     );
-
+    //iOSのフォントサイズを考慮したStyle
+    final textStyle = baseStyle.copyWith(
+      fontSize: MediaQuery.textScalerOf(context).scale(baseStyle.fontSize!),
+    );
     // テキストの描画サイズを計算
     final textPainter = TextPainter(
       text: TextSpan(text: _titleText, style: textStyle),
       textAlign: TextAlign.start,
       textDirection: TextDirection.ltr,
-      textScaler: MediaQuery.textScalerOf(context),
+      textWidthBasis: TextWidthBasis.parent, //iOSでは重要らしい
     )..layout();
 
     final textWidth = textPainter.width;
