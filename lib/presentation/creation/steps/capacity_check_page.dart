@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -65,9 +66,9 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const Spacer(flex: 4),
               Icon(
                 Icons.nfc,
                 size: 80,
@@ -77,6 +78,11 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
               NfcSessionTriggerWidget(
                 instructionText: "NFCカードをタッチしてください\n書き込み可能なデータサイズを計測します",
                 buttonText: '計測開始',
+                showIcon: defaultTargetPlatform != TargetPlatform.iOS,
+                centerText: defaultTargetPlatform == TargetPlatform.iOS,
+                fontSize: defaultTargetPlatform == TargetPlatform.iOS
+                    ? 18
+                    : null,
                 onStartSession: (onError) {
                   ref.read(nfcServiceProvider).startSession();
                 },
@@ -95,6 +101,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
                     textAlign: TextAlign.center,
                   ),
                 ),
+              const Spacer(flex: 6),
             ],
           ),
         ),
