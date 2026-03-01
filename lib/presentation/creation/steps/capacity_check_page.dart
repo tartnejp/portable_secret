@@ -84,10 +84,7 @@ class _CapacityCheckPageState extends ConsumerState<CapacityCheckPage> {
               const SizedBox(height: 48),
               TextButton(
                 onPressed: () => _showManualSelectDialog(context, notifier),
-                child: const Text(
-                  "手動で選択する",
-                  style: TextStyle(decoration: TextDecoration.underline),
-                ),
+                child: const Text("手動で選択する"),
               ),
               if (state.error != null)
                 Padding(

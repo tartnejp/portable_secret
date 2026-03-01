@@ -48,16 +48,6 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
               crossAxisSpacing: 20,
               children: [
                 _UnlockMethodTile(
-                  icon: Icons.password_rounded,
-                  label: 'パスワード',
-                  onTap: () => _navigateTo(
-                    context,
-                    AppRoute.unlockPassword,
-                    LockType.password,
-                    extraBase,
-                  ),
-                ),
-                _UnlockMethodTile(
                   icon: Icons.pattern_rounded,
                   label: 'パターン',
                   onTap: () => _navigateTo(
@@ -84,6 +74,16 @@ class SelectUnlockMethodScreen extends ConsumerWidget {
                     context,
                     AppRoute.unlockPattern,
                     LockType.patternAndPin,
+                    extraBase,
+                  ),
+                ),
+                _UnlockMethodTile(
+                  icon: Icons.password_rounded,
+                  label: 'パスワード',
+                  onTap: () => _navigateTo(
+                    context,
+                    AppRoute.unlockPassword,
+                    LockType.password,
                     extraBase,
                   ),
                 ),

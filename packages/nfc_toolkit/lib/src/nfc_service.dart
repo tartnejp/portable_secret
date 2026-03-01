@@ -238,10 +238,10 @@ class NfcServiceImpl with WidgetsBindingObserver implements NfcService {
                 NfcReaderErrorCodeIos
                     .readerSessionInvalidationErrorUserCanceled) {
               if (onError != null) {
-                onError(nfcErrorUserCanceled);
+                onError('USER_CANCELED');
               }
               if (_writeController != null && !_writeController!.isClosed) {
-                _writeController!.add(NfcWriteError(nfcErrorUserCanceled));
+                _writeController!.add(NfcWriteError('USER_CANCELED'));
               }
               return;
             }

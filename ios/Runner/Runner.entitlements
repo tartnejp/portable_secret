@@ -8,7 +8,7 @@
 	</array>
     <key>com.apple.developer.associated-domains</key>
     <array>
-        <string>applinks:static-site-wzq.pages.dev</string>
+        <string>applinks:ps.toolart.app</string>
     </array>
 </dict>
 </plist>

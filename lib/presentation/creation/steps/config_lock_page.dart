@@ -28,7 +28,7 @@ class ConfigLockPage extends ConsumerWidget {
       }
     });
 
-    String instruction = "${_getMethodName(state.selectedType)} を入力してください";
+    String instruction = "${_getMethodName(state.selectedType!)} を入力してください";
     if (state.selectedType == LockType.patternAndPin) {
       if (state.isLockSecondStage) {
         instruction = "PIN を入力してください (2/2)";
@@ -152,16 +152,10 @@ class ConfigLockPage extends ConsumerWidget {
   }
 
   Widget _buildPasswordInput(CreationNotifier notifier, CreationState state) {
-    return TextField(
-      key: ValueKey("password_input_${state.isConfirming}"),
-      onChanged: notifier.updateLockInput,
-      obscureText: true,
-      onSubmitted: (_) {
-        if (state.lockInput.isNotEmpty) {
-          notifier.nextFromLockConfig();
-        }
-      },
-      decoration: const InputDecoration(border: OutlineInputBorder()),
+    return _PasswordInputField(
+      key: ValueKey("password_input_widget_${state.isConfirming}"),
+      notifier: notifier,
+      state: state,
     );
   }
 
@@ -273,6 +267,61 @@ class ConfigLockPage extends ConsumerWidget {
               );
             },
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PasswordInputField extends StatefulWidget {
+  final CreationNotifier notifier;
+  final CreationState state;
+
+  const _PasswordInputField({
+    required this.notifier,
+    required this.state,
+    super.key,
+  });
+
+  @override
+  State<_PasswordInputField> createState() => _PasswordInputFieldState();
+}
+
+class _PasswordInputFieldState extends State<_PasswordInputField> {
+  bool _showPassword = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          key: ValueKey("password_input_${widget.state.isConfirming}"),
+          onChanged: widget.notifier.updateLockInput,
+          obscureText: !_showPassword,
+          onSubmitted: (_) {
+            if (widget.state.lockInput.isNotEmpty) {
+              widget.notifier.nextFromLockConfig();
+            }
+          },
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Checkbox(
+              value: _showPassword,
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _showPassword = val;
+                  });
+                }
+              },
+            ),
+            const Text("パスワードを表示する"),
+          ],
         ),
       ],
     );

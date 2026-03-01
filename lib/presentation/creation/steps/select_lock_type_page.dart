@@ -72,7 +72,10 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32.0,
+              vertical: 40.0,
+            ),
             child: Text(
               'どの方式でロックをかけますか？',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -121,15 +124,17 @@ class _SelectLockTypePageState extends ConsumerState<SelectLockTypePage> {
             padding: const EdgeInsets.only(bottom: 32.0),
             child: ElevatedButton(
               key: const Key('next_button_method_selection'),
-              onPressed: () {
-                debugPrint(
-                  'SelectLockTypePage: Next button pressed. Current location: ${GoRouterState.of(context).matchedLocation}',
-                );
-                // Update state to match next step
-                notifier.nextFromMethodSelection();
-                // Navigate
-                context.goNamed(AppRoute.creationCapacity.name);
-              },
+              onPressed: state.selectedType == null
+                  ? null
+                  : () {
+                      debugPrint(
+                        'SelectLockTypePage: Next button pressed. Current location: ${GoRouterState.of(context).matchedLocation}',
+                      );
+                      // Update state to match next step
+                      notifier.nextFromMethodSelection();
+                      // Navigate
+                      context.goNamed(AppRoute.creationCapacity.name);
+                    },
               child: const Text("次へ"),
             ),
           ),
@@ -168,7 +173,9 @@ class _LockTypeTile extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? AppColors.accent
-                  : Theme.of(context).colorScheme.primary.withValues(alpha: 0.30),
+                  : Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.30),
               width: isSelected ? 2.5 : 1.5,
             ),
           ),
@@ -178,10 +185,16 @@ class _LockTypeTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accent : Theme.of(context).colorScheme.primary,
+                  color: isSelected
+                      ? AppColors.accent
+                      : Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 32, color: Theme.of(context).colorScheme.onPrimary),
+                child: Icon(
+                  icon,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
               ),
               const SizedBox(height: 16),
               Text(

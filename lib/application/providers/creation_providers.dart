@@ -15,6 +15,7 @@ import '../../application/services/capacity_calculator.dart';
 import '../../domain/value_objects/lock_method.dart';
 import '../../domain/value_objects/secret_data.dart';
 import '../../infrastructure/repositories/draft_repository_impl.dart';
+import '../../consts.dart';
 import 'creation_state.dart';
 import 'encryption_providers.dart';
 
@@ -219,6 +220,13 @@ class CreationNotifier extends _$CreationNotifier {
       return;
     }
 
+    if (state.selectedType == LockType.password &&
+        !state.isConfirming &&
+        RegExp(r'^\d+$').hasMatch(state.lockInput)) {
+      state = state.copyWith(error: "パスワードには文字または記号を含めてください");
+      return;
+    }
+
     if (!state.isConfirming) {
       state = state.copyWith(
         firstInput: state.lockInput,
@@ -276,7 +284,7 @@ class CreationNotifier extends _$CreationNotifier {
     }
 
     final lockMethod = LockMethod(
-      type: state.selectedType,
+      type: state.selectedType!,
       verificationHash: verificationHash,
       salt: null,
     );
@@ -292,7 +300,7 @@ class CreationNotifier extends _$CreationNotifier {
       // FIXED: Specifically check for automatic unlock preference
       int hintByte = 0x00;
       if (!state.isManualUnlockRequired) {
-        hintByte = state.selectedType.index + 1;
+        hintByte = state.selectedType!.index + 1;
       }
       // Debug print for verification (Remove in production or use logger)
       // print('DEBUG: Writing HintByte: $hintByte, ManualUnlockRequired: ${state.isManualUnlockRequired}, SelectedType: ${state.selectedType}');
@@ -325,9 +333,7 @@ class CreationNotifier extends _$CreationNotifier {
       void handleWrite() async {
         try {
           final stream = await nfc.startWrite([
-            NfcWriteDataUri(
-              Uri.parse('https://static-site-wzq.pages.dev/unlock'),
-            ),
+            NfcWriteDataUri(Uri.parse(Consts.nfcUnlockUrl)),
             NfcWriteDataMime('application/portablesec', payloadBytes),
           ], allowOverwrite: true);
 
@@ -345,7 +351,23 @@ class CreationNotifier extends _$CreationNotifier {
               } else if (writeState is NfcCapacityError) {
                 state = state.copyWith(error: writeState.message);
               } else if (writeState is NfcWriteError) {
-                state = state.copyWith(error: "書き込みエラー: ${writeState.message}");
+                final msgLower = writeState.message.toLowerCase();
+                if (msgLower.contains('lost') ||
+                    msgLower.contains('connection') ||
+                    msgLower.contains('ioexception') ||
+                    msgLower.contains('transceive')) {
+                  state = state.copyWith(
+                    error: "書き込み中にエラーが起きました\n\nもう一度NFCカードをタッチしてください",
+                  );
+                } else if (writeState.message != Consts.nfcErrorUserCanceled &&
+                    writeState.message !=
+                        Consts.nfcErrorUserCanceled.toLowerCase()) {
+                  state = state.copyWith(error: "エラーが発生しました");
+                } else {
+                  // User canceled => ignore / stop loading state if there was one
+                  // (Currently just reset error)
+                  state = state.copyWith(error: null);
+                }
               }
             },
             onError: (err) {

@@ -180,7 +180,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
               // Edit Mode: Return to SecretViewScreen
               final args = SecretViewArgs(
                 secret: SecretData(items: state.items),
-                lockType: state.selectedType,
+                lockType: state.selectedType!,
                 isManualUnlockRequired: state.isManualUnlockRequired,
                 capacity: state.maxCapacity,
               );
@@ -344,7 +344,7 @@ class _InputDataPageState extends ConsumerState<InputDataPage> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text(
-                    "容量: $usedBytes / $maxCapacity Bytes",
+                    "暗号化データのサイズ: $usedBytes / $maxCapacity Bytes",
                     style: TextStyle(
                       color: isOver ? Colors.red : Colors.grey,
                       fontWeight: isOver ? FontWeight.bold : FontWeight.normal,

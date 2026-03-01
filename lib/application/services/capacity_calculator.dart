@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../consts.dart';
 import '../../domain/value_objects/secret_data.dart';
 
 class CapacityCalculator {
@@ -20,6 +21,15 @@ class CapacityCalculator {
   // Short record (SR=1): Header(1) + TypeLen(1) + PayloadLen(1) + Type(23) = 26 bytes
   // Long record (SR=0): Header(1) + TypeLen(1) + PayloadLen(4) + Type(23) = 29 bytes
   static const int _ndefMimeTypeLen = 23;
+
+  // URI Record Overhead calculation
+  // SR=1, TNF=1 (1) + TypeLen=1 + PayloadLen=1 + Type="U" (1) + Prefix=0x04 (1)
+  // URI without "https://" length is total length - 8.
+  // Total overhead = 5 + (length - 8) = length - 3
+  static int get uriRecordSize {
+    final length = utf8.encode(Consts.nfcUnlockUrl).length;
+    return length - 3;
+  }
 
   static int calculateTotalBytes(List<SecretItem> items) {
     if (items.isEmpty) return 0;
@@ -54,9 +64,21 @@ class CapacityCalculator {
       ndefHeaderLen = 1 + 1 + 4;
     }
 
-    // Total NDEF Size = Header + TypeName + ID(0) + Payload
-    final totalNdefLen = ndefHeaderLen + _ndefMimeTypeLen + payloadLen;
+    // MIME Record Size = Header + TypeName + ID(0) + Payload
+    final mimeRecordLen = ndefHeaderLen + _ndefMimeTypeLen + payloadLen;
 
-    return totalNdefLen;
+    // Total NDEF Message Size = URI Record + MIME Record
+    final ndefMessageSize = uriRecordSize + mimeRecordLen;
+
+    // NDEF TLV Overhead for Type 2 Tag
+    // Tag (0x03) + Length (1 or 3 bytes) + Terminator (0xFE)
+    int tlvOverhead;
+    if (ndefMessageSize < 255) {
+      tlvOverhead = 3;
+    } else {
+      tlvOverhead = 5;
+    }
+
+    return ndefMessageSize + tlvOverhead;
   }
 }

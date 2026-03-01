@@ -17,9 +17,10 @@ _CreationState _$CreationStateFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const [],
       lockInput: json['lockInput'] as String? ?? "",
-      selectedType:
-          $enumDecodeNullable(_$LockTypeEnumMap, json['selectedType']) ??
-          LockType.pin,
+      selectedType: $enumDecodeNullable(
+        _$LockTypeEnumMap,
+        json['selectedType'],
+      ),
       isConfirming: json['isConfirming'] as bool? ?? false,
       firstInput: json['firstInput'] as String? ?? "",
       maxCapacity: (json['maxCapacity'] as num?)?.toInt() ?? 0,
@@ -37,7 +38,7 @@ Map<String, dynamic> _$CreationStateToJson(_CreationState instance) =>
       'step': _$CreationStepEnumMap[instance.step]!,
       'items': instance.items,
       'lockInput': instance.lockInput,
-      'selectedType': _$LockTypeEnumMap[instance.selectedType]!,
+      'selectedType': _$LockTypeEnumMap[instance.selectedType],
       'isConfirming': instance.isConfirming,
       'firstInput': instance.firstInput,
       'maxCapacity': instance.maxCapacity,

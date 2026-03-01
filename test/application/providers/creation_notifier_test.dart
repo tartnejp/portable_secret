@@ -41,7 +41,7 @@ void main() {
   test('Pattern+PIN Flow State Transitions', () {
     final notifier = container.read(creationProvider.notifier);
 
-    expect(container.read(creationProvider).selectedType, LockType.pin);
+    expect(container.read(creationProvider).selectedType, isNull);
 
     // 1. Select Method
     notifier.selectMethod(LockType.patternAndPin);

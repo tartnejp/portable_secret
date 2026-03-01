@@ -161,6 +161,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  constants:
+    dependency: transitive
+    description:
+      name: constants
+      sha256: "26d53174615edcd8b72a546ec423984e22ec038a1e0d66b5c80e40fe68b1cd47"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   convert:
     dependency: transitive
     description:

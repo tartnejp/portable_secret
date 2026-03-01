@@ -61,6 +61,12 @@ class MockNfcService extends _i1.Mock implements _i3.NfcService {
           as _i4.Stream<_i5.NfcError>);
 
   @override
+  set debugLogger(void Function(String)? value) => super.noSuchMethod(
+    Invocation.setter(#debugLogger, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i4.Future<_i4.Stream<_i3.NfcWriteState>> startWrite(
     List<_i3.NfcWriteData>? dataList, {
     bool? allowOverwrite = false,

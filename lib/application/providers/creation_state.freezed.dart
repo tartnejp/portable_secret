@@ -17,7 +17,7 @@ mixin _$CreationState {
 
  CreationStep get step; List<SecretItem> get items;// Lock Configuration
  String get lockInput;// The raw pin/password input
- LockType get selectedType;// Confirmation Logic
+ LockType? get selectedType;// Confirmation Logic
  bool get isConfirming; String get firstInput;// Tag Capacity
  int get maxCapacity;// Validation/Error
  String? get error; bool get isSuccess;// Draft Status
@@ -57,7 +57,7 @@ abstract mixin class $CreationStateCopyWith<$Res>  {
   factory $CreationStateCopyWith(CreationState value, $Res Function(CreationState) _then) = _$CreationStateCopyWithImpl;
 @useResult
 $Res call({
- CreationStep step, List<SecretItem> items, String lockInput, LockType selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput, bool isEditMode
+ CreationStep step, List<SecretItem> items, String lockInput, LockType? selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput, bool isEditMode
 });
 
 
@@ -74,13 +74,13 @@ class _$CreationStateCopyWithImpl<$Res>
 
 /// Create a copy of CreationState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = null,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,Object? isEditMode = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = freezed,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,Object? isEditMode = null,}) {
   return _then(_self.copyWith(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as CreationStep,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
 as List<SecretItem>,lockInput: null == lockInput ? _self.lockInput : lockInput // ignore: cast_nullable_to_non_nullable
-as String,selectedType: null == selectedType ? _self.selectedType : selectedType // ignore: cast_nullable_to_non_nullable
-as LockType,isConfirming: null == isConfirming ? _self.isConfirming : isConfirming // ignore: cast_nullable_to_non_nullable
+as String,selectedType: freezed == selectedType ? _self.selectedType : selectedType // ignore: cast_nullable_to_non_nullable
+as LockType?,isConfirming: null == isConfirming ? _self.isConfirming : isConfirming // ignore: cast_nullable_to_non_nullable
 as bool,firstInput: null == firstInput ? _self.firstInput : firstInput // ignore: cast_nullable_to_non_nullable
 as String,maxCapacity: null == maxCapacity ? _self.maxCapacity : maxCapacity // ignore: cast_nullable_to_non_nullable
 as int,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
@@ -175,7 +175,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType? selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CreationState() when $default != null:
 return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput,_that.isEditMode);case _:
@@ -196,7 +196,7 @@ return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType? selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)  $default,) {final _that = this;
 switch (_that) {
 case _CreationState():
 return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput,_that.isEditMode);case _:
@@ -216,7 +216,7 @@ return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CreationStep step,  List<SecretItem> items,  String lockInput,  LockType? selectedType,  bool isConfirming,  String firstInput,  int maxCapacity,  String? error,  bool isSuccess,  bool isDraftSaved,  bool isManualUnlockRequired,  bool isLockSecondStage,  String tempFirstLockInput,  bool isEditMode)?  $default,) {final _that = this;
 switch (_that) {
 case _CreationState() when $default != null:
 return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.isConfirming,_that.firstInput,_that.maxCapacity,_that.error,_that.isSuccess,_that.isDraftSaved,_that.isManualUnlockRequired,_that.isLockSecondStage,_that.tempFirstLockInput,_that.isEditMode);case _:
@@ -231,7 +231,7 @@ return $default(_that.step,_that.items,_that.lockInput,_that.selectedType,_that.
 @JsonSerializable()
 
 class _CreationState implements CreationState {
-  const _CreationState({this.step = CreationStep.methodSelection, final  List<SecretItem> items = const [], this.lockInput = "", this.selectedType = LockType.pin, this.isConfirming = false, this.firstInput = "", this.maxCapacity = 0, this.error, this.isSuccess = false, this.isDraftSaved = false, this.isManualUnlockRequired = true, this.isLockSecondStage = false, this.tempFirstLockInput = "", this.isEditMode = false}): _items = items;
+  const _CreationState({this.step = CreationStep.methodSelection, final  List<SecretItem> items = const [], this.lockInput = "", this.selectedType, this.isConfirming = false, this.firstInput = "", this.maxCapacity = 0, this.error, this.isSuccess = false, this.isDraftSaved = false, this.isManualUnlockRequired = true, this.isLockSecondStage = false, this.tempFirstLockInput = "", this.isEditMode = false}): _items = items;
   factory _CreationState.fromJson(Map<String, dynamic> json) => _$CreationStateFromJson(json);
 
 @override@JsonKey() final  CreationStep step;
@@ -245,7 +245,7 @@ class _CreationState implements CreationState {
 // Lock Configuration
 @override@JsonKey() final  String lockInput;
 // The raw pin/password input
-@override@JsonKey() final  LockType selectedType;
+@override final  LockType? selectedType;
 // Confirmation Logic
 @override@JsonKey() final  bool isConfirming;
 @override@JsonKey() final  String firstInput;
@@ -297,7 +297,7 @@ abstract mixin class _$CreationStateCopyWith<$Res> implements $CreationStateCopy
   factory _$CreationStateCopyWith(_CreationState value, $Res Function(_CreationState) _then) = __$CreationStateCopyWithImpl;
 @override @useResult
 $Res call({
- CreationStep step, List<SecretItem> items, String lockInput, LockType selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput, bool isEditMode
+ CreationStep step, List<SecretItem> items, String lockInput, LockType? selectedType, bool isConfirming, String firstInput, int maxCapacity, String? error, bool isSuccess, bool isDraftSaved, bool isManualUnlockRequired, bool isLockSecondStage, String tempFirstLockInput, bool isEditMode
 });
 
 
@@ -314,13 +314,13 @@ class __$CreationStateCopyWithImpl<$Res>
 
 /// Create a copy of CreationState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = null,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,Object? isEditMode = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? items = null,Object? lockInput = null,Object? selectedType = freezed,Object? isConfirming = null,Object? firstInput = null,Object? maxCapacity = null,Object? error = freezed,Object? isSuccess = null,Object? isDraftSaved = null,Object? isManualUnlockRequired = null,Object? isLockSecondStage = null,Object? tempFirstLockInput = null,Object? isEditMode = null,}) {
   return _then(_CreationState(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as CreationStep,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
 as List<SecretItem>,lockInput: null == lockInput ? _self.lockInput : lockInput // ignore: cast_nullable_to_non_nullable
-as String,selectedType: null == selectedType ? _self.selectedType : selectedType // ignore: cast_nullable_to_non_nullable
-as LockType,isConfirming: null == isConfirming ? _self.isConfirming : isConfirming // ignore: cast_nullable_to_non_nullable
+as String,selectedType: freezed == selectedType ? _self.selectedType : selectedType // ignore: cast_nullable_to_non_nullable
+as LockType?,isConfirming: null == isConfirming ? _self.isConfirming : isConfirming // ignore: cast_nullable_to_non_nullable
 as bool,firstInput: null == firstInput ? _self.firstInput : firstInput // ignore: cast_nullable_to_non_nullable
 as String,maxCapacity: null == maxCapacity ? _self.maxCapacity : maxCapacity // ignore: cast_nullable_to_non_nullable
 as int,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable

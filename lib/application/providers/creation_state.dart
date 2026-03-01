@@ -21,7 +21,7 @@ abstract class CreationState with _$CreationState {
 
     // Lock Configuration
     @Default("") String lockInput, // The raw pin/password input
-    @Default(LockType.pin) LockType selectedType,
+    LockType? selectedType,
 
     // Confirmation Logic
     @Default(false) bool isConfirming,
